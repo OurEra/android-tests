@@ -6,39 +6,14 @@
 #include "svc/codec_def.h"
 #include "svc/codec_ver.h"
 
-namespace qiniutest {
-
 const bool kOpenH264EncoderDetailedLogging = false;
 
 // QP scaling thresholds.
 static const int kLowH264QpThreshold = 24;
 static const int kHighH264QpThreshold = 37;
 
-// Used by histograms. Values of entries should not be changed.
-enum H264EncoderImplEvent {
-  kH264EncoderEventInit = 0,
-  kH264EncoderEventError = 1,
-  kH264EncoderEventMax = 16,
-};
 
-FrameType ConvertToVideoFrameType(EVideoFrameType type) {
-  switch (type) {
-    case videoFrameTypeIDR:
-      return kVideoFrameKey;
-    case videoFrameTypeSkip:
-    case videoFrameTypeI:
-    case videoFrameTypeP:
-    case videoFrameTypeIPMixed:
-      return kVideoFrameDelta;
-    case videoFrameTypeInvalid:
-      break;
-  }
-  return kEmptyFrame;
-}
-
-}  // namespace
-
-
+namespace qiniutest {
 
 int CalcBufferSize(int width, int height) {
 
@@ -61,10 +36,7 @@ int CalcBufferSize(int width, int height) {
 // is updated to point to each fragment, with offsets and lengths set as to
 // exclude the start codes.
 static void RtpFragmentize(EncodedImage* encoded_image,
-                           std::unique_ptr<uint8_t[]>* encoded_image_buffer,
-                           const VideoFrameBuffer& frame_buffer,
-                           SFrameBSInfo* info,
-                           RTPFragmentationHeader* frag_header) {
+                           SFrameBSInfo* info) {
   // Calculate minimum buffer size required to hold encoded data.
   size_t required_size = 0;
   size_t fragments_count = 0;
@@ -75,27 +47,11 @@ static void RtpFragmentize(EncodedImage* encoded_image,
       required_size += layerInfo.pNalLengthInByte[nal];
     }
   }
-  if (encoded_image->_size < required_size) {
-    // Increase buffer size. Allocate enough to hold an unencoded image, this
-    // should be more than enough to hold any encoded data of future frames of
-    // the same size (avoiding possible future reallocation due to variations in
-    // required size).
-    encoded_image->_size = CalcBufferSize(
-        frame_buffer.width(), frame_buffer.height());
-    if (encoded_image->_size < required_size) {
-      // Encoded data > unencoded data. Allocate required bytes.
-      logw("Encoding produced more bytes than the original image data! Original bytes: %d , encoded bytes: %d",
-                      encoded_image->_size, required_size);
-      encoded_image->_size = required_size;
-    }
-    encoded_image->_buffer = new uint8_t[encoded_image->_size];
-    encoded_image_buffer->reset(encoded_image->_buffer);
-  }
+  logd("requsted size %z", required_size);
 
   // Iterate layers and NAL units, note each NAL unit as a fragment and copy
   // the data to |encoded_image->_buffer|.
   const uint8_t start_code[4] = {0, 0, 0, 1};
-  frag_header->VerifyAndAllocateFragmentationHeader(fragments_count);
   size_t frag = 0;
   encoded_image->_length = 0;
   for (int layer = 0; layer < info->iLayerNum; ++layer) {
@@ -105,10 +61,6 @@ static void RtpFragmentize(EncodedImage* encoded_image,
     for (int nal = 0; nal < layerInfo.iNalCount; ++nal, ++frag) {
       // Because the sum of all layer lengths, |required_size|, fits in a
       // |size_t|, we know that any indices in-between will not overflow.
-      frag_header->fragmentationOffset[frag] =
-          encoded_image->_length + layer_len + sizeof(start_code);
-      frag_header->fragmentationLength[frag] =
-          layerInfo.pNalLengthInByte[nal] - sizeof(start_code);
       layer_len += layerInfo.pNalLengthInByte[nal];
     }
     // Copy the entire layer's data (including start codes).
@@ -187,9 +139,6 @@ int32_t H264EncoderImpl::InitEncode() {
   encoded_image_._size = CalcBufferSize(1280, 720);
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
   encoded_image_buffer_.reset(encoded_image_._buffer);
-  encoded_image_._completeFrame = true;
-  encoded_image_._encodedWidth = 0;
-  encoded_image_._encodedHeight = 0;
   encoded_image_._length = 0;
 
   SBitrateInfo target_bitrate;
@@ -213,14 +162,9 @@ int32_t H264EncoderImpl::Release() {
   return 0;
 }
 
-int32_t H264EncoderImpl::SetRateAllocation(
-    const VideoBitrateAllocation& bitrate_allocation,
-    uint32_t framerate) {
 
-  return 0;
-}
-
-int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
+int32_t H264EncoderImpl::Encode(const uint8_t* input_frame,
+                                long long ts,
                                 bool force_key) {
   if (!IsInitialized()) {
     return -1;
@@ -232,21 +176,19 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     // (If every frame is a key frame we get lag/delays.)
     openh264_encoder_->ForceIntraFrame(true);
   }
-  rtc::scoped_refptr<const I420BufferInterface> frame_buffer =
-      input_frame.video_frame_buffer()->ToI420();
   // EncodeFrame input.
   SSourcePicture picture;
   memset(&picture, 0, sizeof(SSourcePicture));
-  picture.iPicWidth = frame_buffer->width();
-  picture.iPicHeight = frame_buffer->height();
+  picture.iPicWidth = 1280;
+  picture.iPicHeight = 720;
   picture.iColorFormat = EVideoFormatType::videoFormatI420;
-  picture.uiTimeStamp = input_frame.ntp_time_ms();
-  picture.iStride[0] = frame_buffer->StrideY();
-  picture.iStride[1] = frame_buffer->StrideU();
-  picture.iStride[2] = frame_buffer->StrideV();
-  picture.pData[0] = const_cast<uint8_t*>(frame_buffer->DataY());
-  picture.pData[1] = const_cast<uint8_t*>(frame_buffer->DataU());
-  picture.pData[2] = const_cast<uint8_t*>(frame_buffer->DataV());
+  picture.uiTimeStamp = ts;
+  picture.iStride[0] = 1280;
+  picture.iStride[1] = 1280 / 2;
+  picture.iStride[2] = 1280 / 2;
+  picture.pData[0] = const_cast<uint8_t*>(input_frame);
+  picture.pData[1] = const_cast<uint8_t*>(input_frame + 1280 * 720);
+  picture.pData[2] = const_cast<uint8_t*>(picture.pData[1] + 1280 * 720 / 4);
 
   // EncodeFrame output.
   SFrameBSInfo info;
@@ -259,33 +201,14 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     return -1;
   }
 
-  encoded_image_._encodedWidth = frame_buffer->width();
-  encoded_image_._encodedHeight = frame_buffer->height();
-  encoded_image_._timeStamp = input_frame.timestamp();
-  encoded_image_.ntp_time_ms_ = input_frame.ntp_time_ms();
-  encoded_image_.capture_time_ms_ = input_frame.render_time_ms();
-  encoded_image_.rotation_ = input_frame.rotation();
-  encoded_image_.timing_.flags = TimingFrameFlags::kInvalid;
-  encoded_image_._frameType = ConvertToVideoFrameType(info.eFrameType);
-
   // Split encoded image up into fragments. This also updates |encoded_image_|.
-  RTPFragmentationHeader frag_header;
-  RtpFragmentize(&encoded_image_, &encoded_image_buffer_, *frame_buffer, &info,
-                 &frag_header);
+  RtpFragmentize(&encoded_image_, &info);
 
   // Encoder can skip frames to save bandwidth in which case
   // |encoded_image_._length| == 0.
   if (encoded_image_._length > 0) {
-    // Parse QP.
-    h264_bitstream_parser_.ParseBitstream(encoded_image_._buffer,
-                                          encoded_image_._length);
-    h264_bitstream_parser_.GetLastSliceQp(&encoded_image_.qp_);
-
     // Deliver encoded image.
-    CodecSpecificInfo codec_specific;
-    codec_specific.codecType = kVideoCodecH264;
-    //encoded_image_callback_->OnEncodedImage(encoded_image_, &codec_specific,
-    //                                        &frag_header);
+    logd("encoed image %d", encoded_image_._length);
   }
   return 0;
 }

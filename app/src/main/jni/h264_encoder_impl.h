@@ -2,12 +2,21 @@
 #define H264_ENCODER_IMPL_H_
 
 #include "svc/codec_app_def.h"
+#include <stdint.h>
+#include <memory>
 
 class ISVCEncoder;
 
 namespace qiniutest {
 
+struct EncodedImage {
+  uint8_t* _buffer;
+  size_t _length;
+  size_t _size;
+};
+
 class H264EncoderImpl {
+
  public:
   explicit H264EncoderImpl();
   ~H264EncoderImpl();
@@ -22,15 +31,11 @@ class H264EncoderImpl {
   int32_t InitEncode();
   int32_t Release();
 
-  // The result of encoding - an EncodedImage and RTPFragmentationHeader - are
-  // passed to the encode complete callback.
-  int32_t Encode(const VideoFrame& frame, bool force_key);
+  int32_t Encode(const uint8_t* frame, long long ts, bool force_key);
 
  private:
   bool IsInitialized() const;
   SEncParamExt CreateEncoderParams() const;
-
-  webrtc::H264BitstreamParser h264_bitstream_parser_;
 
   ISVCEncoder* openh264_encoder_;
   // Settings that are used by this encoder.
