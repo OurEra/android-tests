@@ -15,6 +15,13 @@ struct EncodedImage {
   size_t _size;
 };
 
+struct EncodedStats {
+
+  int32_t _max_ms;
+  int32_t _min_ms;
+  int32_t _aver_ms;
+};
+
 class H264EncoderImpl {
 
  public:
@@ -50,7 +57,10 @@ class H264EncoderImpl {
 
   int32_t number_of_cores_;
 
+  FILE* dump_fd_;
+
   EncodedImage encoded_image_;
+  EncodedStats stats_;
   std::unique_ptr<uint8_t[]> encoded_image_buffer_;
 };
 

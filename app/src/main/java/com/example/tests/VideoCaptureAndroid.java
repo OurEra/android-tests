@@ -40,7 +40,7 @@ import android.view.SurfaceHolder;
 // |camera| for null to account for having possibly waited for stopCapture() to
 // complete.
 public class VideoCaptureAndroid implements PreviewCallback, Callback {
-  private final static String TAG = "";
+  private final static String TAG = "srwDebug";
 
   private final static int RESULT_ID_FOCUS = 0x1000;
 
@@ -203,6 +203,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         camera.addCallbackBuffer(new byte[bufSize]);
       }
       camera.setPreviewCallbackWithBuffer(this);
+      camera.setDisplayOrientation(90);
       frameCount = 0;
       averageDurationMs = 1000 / max_mfps;
       camera.startPreview();

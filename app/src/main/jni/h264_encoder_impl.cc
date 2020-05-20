@@ -1,5 +1,7 @@
+#define LOGTAG "srwDebug"
 #include "h264_encoder_impl.h"
 #include <os_log.h>
+#include <os_time.h>
 
 #include "svc/codec_api.h"
 #include "svc/codec_app_def.h"
@@ -47,7 +49,7 @@ static void RtpFragmentize(EncodedImage* encoded_image,
       required_size += layerInfo.pNalLengthInByte[nal];
     }
   }
-  logd("requsted size %z", required_size);
+  //logd("requsted size %d", required_size);
 
   // Iterate layers and NAL units, note each NAL unit as a fragment and copy
   // the data to |encoded_image->_buffer|.
@@ -80,7 +82,8 @@ H264EncoderImpl::H264EncoderImpl()
       max_bps_(0),
       frame_dropping_on_(false),
       key_frame_interval_(0),
-      number_of_cores_(0) {
+      number_of_cores_(0),
+      dump_fd_(NULL) {
 }
 
 H264EncoderImpl::~H264EncoderImpl() {
@@ -111,6 +114,14 @@ int32_t H264EncoderImpl::InitEncode() {
   }
   // else WELS_LOG_DEFAULT is used by default.
 
+  char szName[1024] = {0};
+  sprintf(szName, "/storage/emulated/0/qiniutest.%s", "h264");
+  dump_fd_ = fopen(szName, "w+");
+  if (!dump_fd_)
+    loge("open %s failed %s", szName, strerror(errno));
+  else
+    loge("open %s ok", szName);
+
   number_of_cores_ = 1;
   // Set internal settings from codec_settings
   width_ = 1280;
@@ -123,6 +134,7 @@ int32_t H264EncoderImpl::InitEncode() {
   target_bps_ = 300 * 1000;
 
   SEncParamExt encoder_params = CreateEncoderParams();
+  logd("period %d", encoder_params.uiIntraPeriod);
 
   // Initialize.
   if (openh264_encoder_->InitializeExt(&encoder_params) != 0) {
@@ -148,6 +160,7 @@ int32_t H264EncoderImpl::InitEncode() {
   openh264_encoder_->SetOption(ENCODER_OPTION_BITRATE,
                                &target_bitrate);
   openh264_encoder_->SetOption(ENCODER_OPTION_FRAME_RATE, &max_frame_rate_);
+  logd("init encoder finish");
 
   return 0;
 }
@@ -159,6 +172,8 @@ int32_t H264EncoderImpl::Release() {
   }
   encoded_image_._buffer = NULL;
   encoded_image_buffer_.reset();
+  if (dump_fd_)
+    fclose(dump_fd_);
   return 0;
 }
 
@@ -195,7 +210,9 @@ int32_t H264EncoderImpl::Encode(const uint8_t* input_frame,
   memset(&info, 0, sizeof(SFrameBSInfo));
 
   // Encode!
+  int64_t b_ts = os_get_monitictime();
   int enc_ret = openh264_encoder_->EncodeFrame(&picture, &info);
+  int64_t now_ts =os_get_monitictime();
   if (enc_ret != 0) {
     loge("OpenH264 frame encoding failed, EncodeFrame returned %d", enc_ret);
     return -1;
@@ -204,11 +221,16 @@ int32_t H264EncoderImpl::Encode(const uint8_t* input_frame,
   // Split encoded image up into fragments. This also updates |encoded_image_|.
   RtpFragmentize(&encoded_image_, &info);
 
+  logd("timediff : %lld(ms) length %d type %d", (now_ts - b_ts) / 1000000, encoded_image_._length, info.eFrameType);
   // Encoder can skip frames to save bandwidth in which case
   // |encoded_image_._length| == 0.
   if (encoded_image_._length > 0) {
     // Deliver encoded image.
-    logd("encoed image %d", encoded_image_._length);
+    if (dump_fd_) {
+      fwrite(encoded_image_._buffer, encoded_image_._length, 1, dump_fd_);
+      fflush(dump_fd_);
+    }
+
   }
   return 0;
 }
@@ -229,8 +251,8 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
   encoder_params.iTargetBitrate = target_bps_;
   encoder_params.iMaxBitrate = max_bps_;
   // Rate Control mode
-  //encoder_params.iRCMode = RC_QUALITY_MODE;
-  encoder_params.iRCMode = RC_BITRATE_MODE;
+  encoder_params.iRCMode = RC_QUALITY_MODE;
+  //encoder_params.iRCMode = RC_BITRATE_MODE;
 
   // The following parameters are extension parameters (they're in SEncParamExt,
   // not in SEncParamBase).
@@ -239,6 +261,7 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
   // |keyFrameInterval| - number of frames
   encoder_params.uiIntraPeriod = key_frame_interval_;
   encoder_params.uiMaxNalSize = 0;
+  logd("interval %d", encoder_params.uiIntraPeriod);
   // Threading model: use auto.
   //  0: auto (dynamic imp. internal encoder)
   //  1: single thread (default value)

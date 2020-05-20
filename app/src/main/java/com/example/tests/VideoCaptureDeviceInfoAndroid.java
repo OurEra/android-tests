@@ -23,7 +23,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class VideoCaptureDeviceInfoAndroid{
-  private final static String TAG = "KDC-SDK";
+  private final static String TAG = "srwDebug";
 
   private static boolean isFrontFacing(CameraInfo info) {
     return info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT;
@@ -40,7 +40,7 @@ public class VideoCaptureDeviceInfoAndroid{
   // this reflects static information about the hardware present, there is no
   // need to call this function more than once in a single process.  It is
   // marked "private" as it is only called by native code.
-  private static String getDeviceInfo() {
+  public static String getDeviceInfo() {
     try {
       JSONArray devices = new JSONArray();
       for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {

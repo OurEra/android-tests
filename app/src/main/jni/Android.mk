@@ -10,7 +10,7 @@ include $(call all-module-makefiles-under,$(ROOT_PATH))
 include $(CLEAR_VARS)
 LOCAL_MODULE := qntest
                       
-LOCAL_LDLIBS := -L$(ROOT_PATH)/../thirdparty -lz -llog -landroid -lwebrtc_h264_sh
+LOCAL_LDLIBS := -L$(ROOT_PATH)/../thirdparty -lz -llog -landroid -lopenh264
 LOCAL_CPPFLAGS := -std=c++11
 LOCAL_C_INCLUDES := $(ROOT_PATH)/../thirdparty/openh264
 LOCAL_SRC_FILES := $(ROOT_PATH)/../vid_cap_java.cpp $(ROOT_PATH)/../test_jni.cpp $(ROOT_PATH)/../h264_encoder_impl.cc

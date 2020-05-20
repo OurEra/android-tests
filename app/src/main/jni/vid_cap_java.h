@@ -3,6 +3,7 @@
 
 #include <jni.h>
 #include <os_mutex.h>
+#include "h264_encoder_impl.h"
 
 namespace qiniutest {
 
@@ -29,6 +30,7 @@ private:
   jobject _jcapturer;// Global ref to Java VideoCaptureAndroid object.
   bool _inited;
   bool _started;
+  H264EncoderImpl encoder;
   os::Mutex *_apiCs;
 };
 

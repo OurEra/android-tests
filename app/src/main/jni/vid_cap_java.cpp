@@ -1,4 +1,4 @@
-#define LOGTAG "VidJCamera"
+#define LOGTAG "srwDebug"
 #include <os_log.h>
 #include <string.h>
 
@@ -214,6 +214,8 @@ int32_t VidCaptureJava::Init(uint32_t dev_idx, void *surface) {
   env->DeleteLocalRef(jcapture); jcapture = NULL;
   CHECK(_jcapturer);
   _inited = true;
+
+  encoder.InitEncode();
   return 0;
 }
 
@@ -229,6 +231,7 @@ int32_t VidCaptureJava::DeInit() {
   AttachThreadScoped ats(kvidshare::VidShared::GetJvm());
   ats.env()->DeleteGlobalRef(_jcapturer);
   _inited = false;
+  encoder.Release();
   return 0;
 }
 
@@ -246,8 +249,8 @@ int32_t VidCaptureJava::Start() {
   CHECK(j_start);
 
   //TODO:FIXME get fixable framerate
-  int32_t min_mfps = 15 * 1000;
-  int32_t max_mfps = 15 * 1000;
+  int32_t min_mfps = 25 * 1000;
+  int32_t max_mfps = 25 * 1000;
 
   bool started = env->CallBooleanMethod(_jcapturer, j_start,
                                         1280,
@@ -290,6 +293,7 @@ int32_t VidCaptureJava::OnIncomingFrame(
     //info.planes = 2;
 
     //_video_cb->onIncomingFrame(vplane, info, _video_cb_ctx);
+    encoder.Encode(frame, false, ts);
   }
   return 0;
 }

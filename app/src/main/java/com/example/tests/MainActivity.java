@@ -1,39 +1,41 @@
 package com.example.tests;
 
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.Surface;
-import android.view.SurfaceView;
+import android.os.Environment;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 public class MainActivity extends AppCompatActivity {
-
-    private static boolean mIsIint = false;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         isPermissionOK();
+
+        Log.d("srwDebug", "path: " + Environment.getExternalStorageDirectory().getAbsolutePath());
+        VideoCaptureDeviceInfoAndroid.getDeviceInfo();
+        ((Button)findViewById(R.id.btn_start)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, TestActivity.class));
+            }
+        });
     }
 
     @Override
     protected  void onResume() {
         super.onResume();
-        if (!mIsIint) {
-            VideoCaptureAndroid.setLocalPreview(((SurfaceView) findViewById(R.id.test_sf)).getHolder());
-            NativeApi.init(getApplicationContext(), ((SurfaceView) findViewById(R.id.test_sf)).getHolder().getSurface());
-            mIsIint = true;
-        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        NativeApi.deinit();
     }
 
     private boolean isPermissionOK() {
