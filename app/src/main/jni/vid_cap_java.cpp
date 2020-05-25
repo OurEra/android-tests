@@ -216,6 +216,8 @@ int32_t VidCaptureJava::Init(uint32_t dev_idx, void *surface) {
   _inited = true;
 
   encoder.InitEncode();
+  sdkEncoder = new SdkCodec("video/avc",true);
+  sdkEncoder->start();
   return 0;
 }
 
@@ -232,6 +234,8 @@ int32_t VidCaptureJava::DeInit() {
   ats.env()->DeleteGlobalRef(_jcapturer);
   _inited = false;
   encoder.Release();
+  sdkEncoder->stop();
+  delete sdkEncoder;
   return 0;
 }
 
@@ -279,6 +283,7 @@ int32_t VidCaptureJava::Stop() {
   return env->CallBooleanMethod(_jcapturer, j_stop) ? 0 : -1;
 }
 
+static int32_t counter = 0;
 int32_t VidCaptureJava::OnIncomingFrame(
         uint8_t *frame,
         int32_t size, int64_t ts) {
@@ -293,7 +298,10 @@ int32_t VidCaptureJava::OnIncomingFrame(
     //info.planes = 2;
 
     //_video_cb->onIncomingFrame(vplane, info, _video_cb_ctx);
-    encoder.Encode(frame, false, ts);
+    //if (counter++ % 100 == 0)
+
+    //encoder.Encode(frame, false, ts);
+    sdkEncoder->enqueue(frame, ts);
   }
   return 0;
 }

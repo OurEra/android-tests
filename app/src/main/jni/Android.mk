@@ -6,14 +6,18 @@ include $(LOCAL_PATH)/build_help.mk
 ##
 include $(call all-module-makefiles-under,$(ROOT_PATH))
 
+include $(ROOT_PATH)/../thirdparty/libyuv/module.mk
+
 ##
 include $(CLEAR_VARS)
 LOCAL_MODULE := qntest
                       
-LOCAL_LDLIBS := -L$(ROOT_PATH)/../thirdparty -lz -llog -landroid -lopen264_sh
+LOCAL_LDLIBS := -L$(ROOT_PATH)/../thirdparty -lz -llog -landroid -lmediandk -lopenh264
 LOCAL_CPPFLAGS := -std=c++11
 LOCAL_C_INCLUDES := $(ROOT_PATH)/../thirdparty/openh264
-LOCAL_SRC_FILES := $(ROOT_PATH)/../vid_cap_java.cpp $(ROOT_PATH)/../test_jni.cpp $(ROOT_PATH)/../h264_encoder_impl.cc
+LOCAL_SRC_FILES := $(ROOT_PATH)/../vid_cap_java.cpp $(ROOT_PATH)/../test_jni.cpp \
+                   $(ROOT_PATH)/../h264_encoder_impl.cc \
+                   $(ROOT_PATH)/../sdk_codec.cpp
 #LOCAL_CPPFLAGS := -ffunction-sections -funwind-tables -fstack-protector-strong \
 #                 -no-canonical-prefixes -Wa,--noexecstack -Wformat \
 #                 -Werror=format-security -std=c++11

@@ -4,6 +4,7 @@
 #include <jni.h>
 #include <os_mutex.h>
 #include "h264_encoder_impl.h"
+#include "sdk_codec.h"
 
 namespace qiniutest {
 
@@ -14,7 +15,6 @@ public:
   VidCaptureJava();
   virtual ~VidCaptureJava();
 
-  //IVidCapture cls
   int32_t Init(uint32_t dev_idx, void *surface);
   int32_t DeInit();
 
@@ -31,6 +31,7 @@ private:
   bool _inited;
   bool _started;
   H264EncoderImpl encoder;
+  SdkCodec* sdkEncoder;
   os::Mutex *_apiCs;
 };
 
