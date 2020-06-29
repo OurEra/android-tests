@@ -1,2 +1,3 @@
+include ':camera-test'
 include ':java-test'
 include ':openh264-test'
