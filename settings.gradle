@@ -1,2 +1,2 @@
-rootProject.name='qiniuTests'
-include ':app'
+include ':java-test'
+include ':openh264-test'
