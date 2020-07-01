@@ -1,25 +1,10 @@
-/*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
-
 package com.example.tests;
-
-import java.io.IOException;
-import java.util.concurrent.Exchanger;
-import java.util.List;
-import java.util.ArrayList;
 
 import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera;
+import android.hardware.Camera.PreviewCallback;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.os.Handler;
@@ -27,23 +12,15 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.OrientationEventListener;
-import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceHolder;
+import android.view.SurfaceHolder.Callback;
 
-// Wrapper for android Camera, with support for direct local preview rendering.
-// Threading notes: this class is called from ViE C++ code, and from Camera &
-// SurfaceHolder Java callbacks.  Since these calls happen on different threads,
-// the entry points to this class are all synchronized.  This shouldn't present
-// a performance bottleneck because only onPreviewFrame() is called more than
-// once (and is called serially on a single thread), so the lock should be
-// uncontended.  Note that each of these synchronized methods must check
-// |camera| for null to account for having possibly waited for stopCapture() to
-// complete.
+import java.io.IOException;
+import java.util.concurrent.Exchanger;
+
 public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private final static String TAG = "srwDebug";
-
-  private final static int RESULT_ID_FOCUS = 0x1000;
-
+  
   private static SurfaceHolder localPreview;
   private Camera camera;  // Only non-null while capturing.
   private CameraThread cameraThread;
@@ -97,11 +74,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       };
     // Don't add any code here; see the comment above |self| above!
   }
-
-  // Return the global application context.
-  private static native Context GetContext();
-  // Request frame rotation post-capture.
-  private native void OnOrientationChanged(long captureObject, int degrees);
 
   private class CameraThread extends Thread {
     private Exchanger<Handler> handlerExchanger;
@@ -221,7 +193,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       exchange(resultDropper, false);
     }
     exchange(result, false);
-    return;
   }
 
   // Called by native code.  Returns true when camera is known to be stopped.
@@ -282,9 +253,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     Looper.myLooper().quit();
     return;
   }
-
-  private native void ProvideCameraFrame(
-      byte[] data, int length, long timeStamp, long captureObject);
 
   // Called on cameraThread so must not "synchronized".
   @Override
@@ -402,7 +370,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       return;
     }
     exchange(result, null);
-    return;
   }
 
   // Exchanges |value| with |exchanger|, converting InterruptedExceptions to
@@ -427,62 +394,9 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     return parameters.flatten();
   }
 
-  private native void sendResult(long context, int id, int result);
+  private static native Context GetContext();
 
-  private synchronized void autoFocus(ArrayList<Camera.Area> focusAreas, ArrayList<Camera.Area> meteringAreas) {
+  private native void ProvideCameraFrame(byte[] data, int length, long timeStamp, long captureObject);
 
-    Camera.Parameters params = camera.getParameters();
-    List<String> mode = params.getSupportedFocusModes();
-    if (!mode.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
-      Log.d(TAG, "Camera not support auto focus, the supported mode: "
-                  + mode);
-      return;
-    }
-    camera.cancelAutoFocus();
-    if (params.getMaxNumFocusAreas() > 0) {
-      if (focusAreas != null && focusAreas.size() > 0) params.setFocusAreas(focusAreas);
-    } else {
-      Log.d(TAG, "focus areas not supported");
-    }
-
-    for (int i = 0; i < focusAreas.size(); i++)
-      Log.d(TAG, "index " + i + " top " + focusAreas.get(i).rect.top
-                  + " left " + focusAreas.get(i).rect.left
-                  + " right " + focusAreas.get(i).rect.right
-                  + " bottom " + focusAreas.get(i).rect.bottom
-                  + " weight " + focusAreas.get(i).weight);
-
-    // set metering along with focus areas
-    if (params.getMaxNumMeteringAreas() > 0) {
-        if (meteringAreas != null && meteringAreas.size() > 0) params.setMeteringAreas(meteringAreas);
-    } else {
-        Log.d(TAG, "metering areas not supported");
-    }
-
-    final String currentFocusMode = params.getFocusMode();
-    params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-    camera.setParameters(params);
-
-    camera.autoFocus(new Camera.AutoFocusCallback() {
-        @Override
-        public void onAutoFocus(boolean success, Camera camera) {
-            Log.d(TAG, "onAutoFocus " + success);
-            sendResult(native_capturer, RESULT_ID_FOCUS, success ? 1 : 0);
-            Camera.Parameters params = camera.getParameters();
-            params.setFocusMode(currentFocusMode);
-            camera.setParameters(params);
-        }
-    });
-  }
-
-  private synchronized void setMetering(ArrayList<Camera.Area> areas) {
-
-    Camera.Parameters params = camera.getParameters();
-    if (params.getMaxNumMeteringAreas() > 0) {
-        if (areas != null && areas.size() > 0) params.setMeteringAreas(areas);
-    } else {
-        Log.d(TAG, "metering areas not supported");
-    }
-  }
-
+  private native void OnOrientationChanged(long captureObject, int degrees);
 }
