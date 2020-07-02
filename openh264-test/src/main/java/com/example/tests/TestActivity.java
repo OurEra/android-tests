@@ -19,7 +19,7 @@ public class TestActivity extends AppCompatActivity {
     protected  void onResume() {
         super.onResume();
         if (!mIsIint) {
-            VideoCaptureAndroid.setLocalPreview(((SurfaceView) findViewById(R.id.test_sf)).getHolder());
+            VideoCaptureAndroidNative.setLocalPreview(((SurfaceView) findViewById(R.id.test_sf)).getHolder());
             NativeApi.init(getApplicationContext(), ((SurfaceView) findViewById(R.id.test_sf)).getHolder().getSurface());
             mIsIint = true;
         }

@@ -1,4 +1,4 @@
-package com.example.tests;
+package com.example.lib.camera;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class VideoCaptureDeviceInfoAndroid{
-  private final static String TAG = "srwDebug";
+  private final static String TAG = VideoCaptureDeviceInfoAndroid.class.getSimpleName();
 
   private static boolean isFrontFacing(CameraInfo info) {
     return info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT;

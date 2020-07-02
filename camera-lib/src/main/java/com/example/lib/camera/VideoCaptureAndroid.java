@@ -1,6 +1,5 @@
-package com.example.tests;
+package com.example.lib.camera;
 
-import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -11,7 +10,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
-import android.view.OrientationEventListener;
 import android.view.SurfaceHolder;
 import android.view.SurfaceHolder.Callback;
 
@@ -19,7 +17,7 @@ import java.io.IOException;
 import java.util.concurrent.Exchanger;
 
 public class VideoCaptureAndroid implements PreviewCallback, Callback {
-  private final static String TAG = "srwDebug";
+  private final static String TAG = VideoCaptureAndroid.class.getSimpleName();
   
   private static SurfaceHolder localPreview;
   private Camera camera;  // Only non-null while capturing.
@@ -27,9 +25,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private Handler cameraThreadHandler;
   private final int id;
   private final Camera.CameraInfo info;
-  private final OrientationEventListener orientationListener;
-  private boolean orientationListenerEnabled;
-  private final long native_capturer;  // |VideoCaptureAndroid*| in C++.
   private SurfaceTexture cameraSurfaceTexture;
   private int[] cameraGlTextures = null;
   // Arbitrary queue depth.  Higher number means more memory allocated & held,
@@ -40,6 +35,8 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   private long lastCaptureTimeMs;
   private int frameCount;
 
+  private PreviewFrameCallback mFrameCallback;
+
   // Requests future capturers to send their frames to |localPreview| directly.
   public static void setLocalPreview(SurfaceHolder localPreview) {
     // It is a gross hack that this is a class-static.  Doing it right would
@@ -48,31 +45,19 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
     VideoCaptureAndroid.localPreview = localPreview;
   }
 
-  public VideoCaptureAndroid(int id, long native_capturer) {
+  public interface PreviewFrameCallback {
+
+    void onFrame(byte[] data, long len, long tiemMs);
+  }
+
+  public VideoCaptureAndroid(int id) {
     this.id = id;
-    this.native_capturer = native_capturer;
     this.info = new Camera.CameraInfo();
     Camera.getCameraInfo(id, info);
+  }
 
-    // Must be the last thing in the ctor since we pass a reference to |this|!
-    final VideoCaptureAndroid self = this;
-    orientationListener = new OrientationEventListener(GetContext()) {
-        @Override public void onOrientationChanged(int degrees) {
-          if (!self.orientationListenerEnabled) {
-            return;
-          }
-          if (degrees == OrientationEventListener.ORIENTATION_UNKNOWN) {
-            return;
-          }
-          if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            degrees = (info.orientation - degrees + 360) % 360;
-          } else {  // back-facing
-            degrees = (info.orientation + degrees) % 360;
-          }
-          self.OnOrientationChanged(self.native_capturer, degrees);
-        }
-      };
-    // Don't add any code here; see the comment above |self| above!
+  public void registerFrameCallback(PreviewFrameCallback callback) {
+    mFrameCallback = callback;
   }
 
   private class CameraThread extends Thread {
@@ -93,7 +78,7 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   // Note that this actually opens the camera, and Camera callbacks run on the
   // thread that calls open(), so this is done on the CameraThread.  Since ViE
   // API needs a synchronous success return value we wait for the result.
-  private synchronized boolean startCapture(
+  public synchronized boolean startCapture(
       final int width, final int height,
       final int min_mfps, final int max_mfps) {
     Log.d(TAG, "startCapture: " + width + "x" + height + "@" +
@@ -113,8 +98,6 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
         }
       });
     boolean startResult = exchange(result, false); // |false| is a dummy value.
-    orientationListenerEnabled = true;
-    orientationListener.enable();
     return startResult;
   }
 
@@ -152,7 +135,14 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
               GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
 
           cameraSurfaceTexture = new SurfaceTexture(cameraGlTextures[0]);
-          cameraSurfaceTexture.setOnFrameAvailableListener(null);
+          cameraSurfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
+            @Override
+            public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+                float[] transformMatrix = new float[16];
+                surfaceTexture.getTransformMatrix(transformMatrix);
+                Log.i(TAG, "matrix " + transformMatrix);
+            }
+          });
           camera.setPreviewTexture(cameraSurfaceTexture);
         } catch (IOException e) {
           throw new RuntimeException(e);
@@ -196,10 +186,8 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
   }
 
   // Called by native code.  Returns true when camera is known to be stopped.
-  private synchronized boolean stopCapture() {
+  public synchronized boolean stopCapture() {
     Log.d(TAG, "stopCapture");
-    orientationListener.disable();
-    orientationListenerEnabled = false;
     final Exchanger<Boolean> result = new Exchanger<Boolean>();
     cameraThreadHandler.post(new Runnable() {
         @Override public void run() {
@@ -278,7 +266,9 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       }
     }
     lastCaptureTimeMs = captureTimeMs;
-    ProvideCameraFrame(data, data.length, captureTimeMs, native_capturer);
+    if (mFrameCallback != null) {
+      mFrameCallback.onFrame(data, data.length, captureTimeMs);
+    }
     camera.addCallbackBuffer(data);
   }
 
@@ -381,22 +371,4 @@ public class VideoCaptureAndroid implements PreviewCallback, Callback {
       throw new RuntimeException(e);
     }
   }
-
-  private synchronized boolean setParameter(String parameter) {
-    Camera.Parameters parameters = camera.getParameters();
-    parameters.unflatten(parameter);
-    camera.setParameters(parameters);
-    return true;
-  }
-
-  private synchronized String getParameter() {
-    Camera.Parameters parameters = camera.getParameters();
-    return parameters.flatten();
-  }
-
-  private static native Context GetContext();
-
-  private native void ProvideCameraFrame(byte[] data, int length, long timeStamp, long captureObject);
-
-  private native void OnOrientationChanged(long captureObject, int degrees);
 }
