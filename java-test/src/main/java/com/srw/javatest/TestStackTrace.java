@@ -1,5 +1,7 @@
 package com.srw.javatest;
 
+import com.example.lib.java.FormatLog;
+
 public class TestStackTrace extends BaseTest {
 
     @Override
@@ -9,14 +11,14 @@ public class TestStackTrace extends BaseTest {
 
     void addStack() {
         StackTraceElement[] trace = Thread.currentThread().getStackTrace();
-        System.out.println("size " + trace.length);
+        FormatLog.LogI("size " + trace.length);
         for (int i = 0; i < trace.length; i++) {
             dump(trace[i]);
         }
     }
 
     void dump(StackTraceElement element) {
-        System.out.println("class " + element.getFileName() +
+        FormatLog.LogI("class " + element.getFileName() +
                 " method " + element.getMethodName() +
                 " line " + element.getLineNumber());
     }

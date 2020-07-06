@@ -1,7 +1,8 @@
 package com.srw.javatest;
 
+import com.example.lib.java.FormatLog;
+
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 public class TestByteBuffer extends BaseTest {
 
@@ -31,16 +32,16 @@ public class TestByteBuffer extends BaseTest {
         dump("limit and rewind");
 
         ByteBuffer readonly = testObj.asReadOnlyBuffer();
-        System.out.println("attr read " + readonly.get() + " mark " + readonly.mark());
+        FormatLog.LogI("attr read " + readonly.get() + " mark " + readonly.mark());
     }
 
     void dump(String mark) {
 
-        System.out.println(mark + "===");
-        System.out.println("buffer cap " + testObj.capacity() +
+        FormatLog.LogI(mark + "===");
+        FormatLog.LogI("buffer cap " + testObj.capacity() +
                 " buffer limit " + testObj.limit() +
                 " buffer pos " + testObj.position() +
                 " buffer mark " + testObj.mark());
-        System.out.println("===" + mark + "\n");
+        FormatLog.LogI("===" + mark + "\n");
     }
 }

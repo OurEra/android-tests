@@ -1,5 +1,7 @@
 package com.srw.javatest;
 
+import com.example.lib.java.FormatLog;
+
 import org.json.JSONObject;
 
 public class TestJSON extends BaseTest {
@@ -14,7 +16,7 @@ public class TestJSON extends BaseTest {
         String[] copyNames = {"key1", "key4"};
         JSONObject copy = new JSONObject(original, copyNames);
 
-        System.out.println("original " + original + " copy " + copy);
+        FormatLog.LogI("original " + original + " copy " + copy);
 
     }
 }
