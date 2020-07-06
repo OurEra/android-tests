@@ -4,6 +4,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     // https://mvnrepository.com/artifact/org.json/json
     implementation 'org.json:json:20160810'
+    implementation project(path: ':java-lib')
 }
 
 sourceCompatibility = "1.7"
