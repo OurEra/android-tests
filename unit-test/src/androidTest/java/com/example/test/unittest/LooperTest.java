@@ -1,4 +1,4 @@
-package com.srw.camera.test;
+package com.example.test.unittest;
 
 import android.os.Handler;
 import android.os.HandlerThread;
