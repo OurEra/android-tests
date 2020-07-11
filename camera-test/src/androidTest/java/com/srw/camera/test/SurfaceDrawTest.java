@@ -1,8 +1,6 @@
 package com.srw.camera.test;
 
 import android.os.Build;
-import static android.support.test.InstrumentationRegistry.getInstrumentation;
-import static android.support.test.InstrumentationRegistry.getTargetContext;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
 
@@ -11,23 +9,18 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static android.support.test.InstrumentationRegistry.getInstrumentation;
+import static android.support.test.InstrumentationRegistry.getTargetContext;
+
 @RunWith(AndroidJUnit4.class)
-public class ActivityInstrumentTest {
-//    @Rule
-//    public ActivityTestRule<SimpleDrawSurfaceView> mActivityRule = new ActivityTestRule<>(
-//            SimpleDrawSurfaceView.class);
+public class SurfaceDrawTest {
     @Rule
-    public ActivityTestRule<CameraPreview> mActivityRule = new ActivityTestRule<>(
-        CameraPreview.class);
+    public ActivityTestRule<SimpleDrawSurfaceView> mActivityRule = new ActivityTestRule<>(
+            SimpleDrawSurfaceView.class);
 
     @Test
     public void Empty() {
-        // Hold target activity
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        HoldPage();
     }
 
     @Before
@@ -38,6 +31,14 @@ public class ActivityInstrumentTest {
             getInstrumentation().getUiAutomation().executeShellCommand(
                     "pm grant " + getTargetContext().getPackageName()
                             + " android.permission.CAMERA");
+        }
+    }
+
+    private void HoldPage() {
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 }
