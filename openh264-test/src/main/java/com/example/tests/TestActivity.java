@@ -3,7 +3,7 @@ package com.example.tests;
 import android.os.Bundle;
 import android.view.SurfaceView;
 
-import androidx.appcompat.app.AppCompatActivity;
+import android.support.v7.app.AppCompatActivity;
 
 public class TestActivity extends AppCompatActivity {
 

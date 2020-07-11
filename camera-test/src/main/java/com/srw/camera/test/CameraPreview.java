@@ -2,13 +2,12 @@ package com.srw.camera.test;
 
 import android.os.Bundle;
 import android.view.SurfaceView;
-
-import androidx.appcompat.app.AppCompatActivity;
+import android.support.v7.app.AppCompatActivity;
 
 import com.example.lib.camera.VideoCaptureAndroid;
 import com.example.lib.camera.VideoCaptureDeviceInfoAndroid;
 
-public class MainActivity extends AppCompatActivity {
+public class CameraPreview extends AppCompatActivity {
 
     private boolean mInited;
     private VideoCaptureAndroid mCapture;

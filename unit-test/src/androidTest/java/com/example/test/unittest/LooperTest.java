@@ -4,7 +4,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
+import android.support.test.runner.AndroidJUnit4
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
