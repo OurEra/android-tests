@@ -7,7 +7,8 @@ public class TestEntry {
     private static final boolean TEST_BYTE_BUFFER = false;
     private static final boolean TEST_JSON        = false;
     private static final boolean TEST_STACK_TRACE = false;
-    private static final boolean TEST_SYNC        = true;
+    private static final boolean TEST_SYNC        = false;
+    private static final boolean TEST_EQUAL       = true;
     public static void main(String[] args) {
 
         if (TEST_BYTE_BUFFER) {
@@ -33,6 +34,12 @@ public class TestEntry {
             TestSync testSync = new TestSync();
             testSync.test();
             FormatLog.LogI("\nTEST END " + TestSync.class.getSimpleName());
+        }
+        if (TEST_EQUAL) {
+            FormatLog.LogI("TEST BEGIN " + TestEquals.class.getSimpleName() + "\n");
+            TestEquals testEquals = new TestEquals();
+            testEquals.test();
+            FormatLog.LogI("TEST END " + TestEquals.class.getSimpleName());
         }
     }
 }
