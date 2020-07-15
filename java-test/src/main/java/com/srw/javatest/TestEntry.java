@@ -8,7 +8,8 @@ public class TestEntry {
     private static final boolean TEST_JSON        = false;
     private static final boolean TEST_STACK_TRACE = false;
     private static final boolean TEST_SYNC        = false;
-    private static final boolean TEST_EQUAL       = true;
+    private static final boolean TEST_EQUAL       = false;
+    private static final boolean TEST_ENUM        = true;
     public static void main(String[] args) {
 
         if (TEST_BYTE_BUFFER) {
@@ -40,6 +41,12 @@ public class TestEntry {
             TestEquals testEquals = new TestEquals();
             testEquals.test();
             FormatLog.LogI("TEST END " + TestEquals.class.getSimpleName());
+        }
+        if (TEST_ENUM) {
+            FormatLog.LogI("TEST BEGIN " + TestEnum.class.getSimpleName() + "\n");
+            TestEnum testEnum = new TestEnum();
+            testEnum.test();
+            FormatLog.LogI("TEST END " + TestEnum.class.getSimpleName());
         }
     }
 }
