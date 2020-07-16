@@ -111,7 +111,7 @@ void SdkCodec::cacheJavaObj() {
                     "setString", "(Ljava/lang/String;Ljava/lang/String;)V",
                     fields_.MF_SetStringID);
   GET_METHOD_ID(env, gs_jclsMedaiFormat,
-                    "getInteger", "(Ljava/lang/String;I)I",
+                    "getInteger", "(Ljava/lang/String;)I",
                      fields_.MF_GetIntegerID);
   GET_METHOD_ID(env, gs_jclsMediaCodec,
                     "dequeueInputBuffer", "(J)I",
@@ -426,15 +426,15 @@ bool SdkCodec::do_callback()
     int32_t color = 0;
 
     jstring  jname = _jniEnvCb->NewStringUTF(AMEDIAFORMAT_KEY_WIDTH);
-    width = _jniEnvCb->CallIntMethod(jformat, fields_.MF_GetIntegerID, jname, 0);
+    width = _jniEnvCb->CallIntMethod(jformat, fields_.MF_GetIntegerID, jname);
     _jniEnvCb->DeleteLocalRef(jname); jname = NULL;
 
     jname = _jniEnvCb->NewStringUTF(AMEDIAFORMAT_KEY_HEIGHT);
-    height = _jniEnvCb->CallIntMethod(jformat, fields_.MF_GetIntegerID, jname, 0);
+    height = _jniEnvCb->CallIntMethod(jformat, fields_.MF_GetIntegerID, jname);
     _jniEnvCb->DeleteLocalRef(jname); jname = NULL;
 
     jname = _jniEnvCb->NewStringUTF(AMEDIAFORMAT_KEY_COLOR_FORMAT);
-    color = _jniEnvCb->CallIntMethod(jformat, fields_.MF_GetIntegerID, jname, 0);
+    color = _jniEnvCb->CallIntMethod(jformat, fields_.MF_GetIntegerID, jname);
     _jniEnvCb->DeleteLocalRef(jname); jname = NULL;
 
     _jniEnvCb->DeleteLocalRef(jformat);

@@ -50,9 +50,6 @@ public class PermissionChecker {
         if (!addPermission(permissionsList, Manifest.permission.CAMERA)) {
             permissionsNeeded.add("CAMERA");
         }
-        if (!addPermission(permissionsList, Manifest.permission.RECORD_AUDIO)) {
-            permissionsNeeded.add("MICROPHONE");
-        }
         if (!addPermission(permissionsList, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
             permissionsNeeded.add("Write external storage");
 
@@ -76,8 +73,7 @@ public class PermissionChecker {
                                         REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS);
                             }
                         });
-            }
-            else {
+            } else {
                 mActivity.requestPermissions(permissionsList.toArray(new String[permissionsList.size()]),
                         REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS);
             }

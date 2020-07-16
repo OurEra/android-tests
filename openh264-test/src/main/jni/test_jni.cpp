@@ -29,7 +29,6 @@ JNIEXPORT jint JNI_API(init)
 
   capture = new qiniutest::VidCaptureJava();
   capture->Init(1, windows);
-  capture->Start();
 
   return 0;
 }
@@ -37,7 +36,6 @@ JNIEXPORT jint JNI_API(init)
 JNIEXPORT jint JNI_API(deinit)
 (JNIEnv *env, jobject) {
 
-  capture->Stop();
   qiniutest::InitCaptureJavaRes(false);
   qiniutest::InitCodecJavaRes(false);
   ANativeWindow_release(windows);

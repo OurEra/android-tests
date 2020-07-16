@@ -9,9 +9,9 @@
 #include <os_assert.h>
 #include "vid_cap_java.h"
 
-static jclass   gs_jclass = NULL;  // VideoCaptureAndroid
+static jclass   gs_jclass = NULL;
 
-static const char* const VideoCapPathName   = "com/example/tests/VideoCaptureAndroid";
+static const char* const VideoCapPathName   = "com/example/tests/VideoCaptureAndroidNative";
 static const char* const CameraAreaPathName = "android/hardware/Camera$Area";
 static const char* const RectPathName       = "android/graphics/Rect";
 static const char* const ListPathName       = "java/util/ArrayList";
@@ -21,7 +21,6 @@ static jclass   gs_jclsRect       = NULL;
 static jclass   gs_jclsList       = NULL;
 
 static struct fields {
-
   jmethodID areaInit;
   jfieldID areaRectID;
   jfieldID areaWeightID;
@@ -34,12 +33,6 @@ static struct fields {
   jmethodID listAdd;
 
 } fields_;
-
-//Called by Java to get the global application context.
-jobject JNICALL GetContext(JNIEnv* env, jobject) {
-  CHECK(kvidshare::VidShared::GetContext());
-  return kvidshare::VidShared::GetContext();
-}
 
 //Called by Java when the camera has a new frame to deliver.
 void JNICALL ProvideCameraFrame(
@@ -58,37 +51,6 @@ void JNICALL ProvideCameraFrame(
   jbyte* frame = env->GetByteArrayElements(javaCameraFrame, NULL);
   capture->OnIncomingFrame(reinterpret_cast<uint8_t*>(frame), length, timeStamp);
   env->ReleaseByteArrayElements(javaCameraFrame, frame, JNI_ABORT);
-}
-
-//Called by Java when the device orientation has changed.
-void JNICALL OnOrientationChanged(
-    JNIEnv* env, jobject, jlong context, jint degrees) {
-
-  //TODO: FIXME deliver frame
-  /*
-  webrtc::videocapturemodule::VidCaptureJava* captureModule =
-      reinterpret_cast<webrtc::videocapturemodule::VidCaptureJava*>(
-          context);
-  degrees = (360 + degrees) % 360;
-  CHECK(degrees >= 0 && degrees < 360);
-  VideoCaptureRotation rotation =
-      (degrees <= 45 || degrees > 315) ? kCameraRotate0 :
-      (degrees > 45 && degrees <= 135) ? kCameraRotate90 :
-      (degrees > 135 && degrees <= 225) ? kCameraRotate180 :
-      (degrees > 225 && degrees <= 315) ? kCameraRotate270 :
-      kCameraRotate0;  // Impossible.
-  int32_t status =
-      captureModule->VideoCaptureImpl::SetCaptureRotation(rotation);
-  CHECK(status == 0);
-  */
-}
-
-void JNICALL onCapSendResult(JNIEnv* env, jobject, jlong context, jint id, jint value) {
-
-  qiniutest::VidCaptureJava* capture =
-      reinterpret_cast<qiniutest::VidCaptureJava*>(
-          context);
-  capture->onIncomingEvent(id, value);
 }
 
 static int32_t jstring2chars(JNIEnv *env, jstring  jstr, char *szBuf, int32_t size)
@@ -114,7 +76,7 @@ static int32_t jstring2chars(JNIEnv *env, jstring  jstr, char *szBuf, int32_t si
 namespace qiniutest {
 
 int32_t InitCaptureJavaRes(bool init) {
-  logi("init");
+  logd("init srwDebug");
   if (init) {
     AttachThreadScoped ats(kvidshare::VidShared::GetJvm());
     JNIEnv *env = ats.env();
@@ -127,20 +89,11 @@ int32_t InitCaptureJavaRes(bool init) {
     VidCaptureJava::cacheJavaRes(env);
 
     JNINativeMethod native_methods[] = {
-        {"GetContext",
-         "()Landroid/content/Context;",
-         reinterpret_cast<void*>(&GetContext)},
-        {"OnOrientationChanged",
-         "(JI)V",
-         reinterpret_cast<void*>(&OnOrientationChanged)},
         {"ProvideCameraFrame",
          "([BIJJ)V",
-         reinterpret_cast<void*>(&ProvideCameraFrame)},
-        {"sendResult",
-         "(JII)V",
-         reinterpret_cast<void*>(&onCapSendResult)}};
+         reinterpret_cast<void*>(&ProvideCameraFrame)}};
     if (ats.env()->RegisterNatives(gs_jclass,
-                                   native_methods, 4) != 0)
+                                   native_methods, 1) != 0)
       CHECK(false);
   } else {
       AttachThreadScoped ats(kvidshare::VidShared::GetJvm());
@@ -185,8 +138,7 @@ void VidCaptureJava::cacheJavaRes(JNIEnv* env) {
 
 VidCaptureJava::VidCaptureJava()
     : _jcapturer(NULL),
-      _inited(false),
-      _started(false) {
+      _inited(false) {
   _apiCs = os::Mutex::Create();
   CHECK(_apiCs);
 }
@@ -226,10 +178,6 @@ int32_t VidCaptureJava::DeInit() {
   if (!_inited)
     return 0;
   // Ensure Java camera is released even if our caller didn't explicitly Stop.
-  if (_started) {
-    logw("Waring camera not stopped, force stop it\n");
-    Stop();
-  }
   AttachThreadScoped ats(kvidshare::VidShared::GetJvm());
   ats.env()->DeleteGlobalRef(_jcapturer);
   _inited = false;
@@ -239,75 +187,24 @@ int32_t VidCaptureJava::DeInit() {
   return 0;
 }
 
-int32_t VidCaptureJava::Start() {
-  os::AutoLock lock(_apiCs);
-  if (_started)
-    return 0;
-  AttachThreadScoped ats(kvidshare::VidShared::GetJvm());
-  JNIEnv* env = ats.env();
-
-  //TODO:FIXME pls check capability validated
-
-  jmethodID j_start =
-      env->GetMethodID(gs_jclass, "startCapture", "(IIII)Z");
-  CHECK(j_start);
-
-  //TODO:FIXME get fixable framerate
-  int32_t min_mfps = 25 * 1000;
-  int32_t max_mfps = 25 * 1000;
-
-  bool started = env->CallBooleanMethod(_jcapturer, j_start,
-                                        1280,
-                                        720,
-                                        min_mfps, max_mfps);
-  if (started) {
-    _started = true;
-  }
-  return started ? 0 : -1;
-}
-
-int32_t VidCaptureJava::Stop() {
-  _apiCs->lock();
-  if (!_started)
-    return 0;
-  AttachThreadScoped ats(kvidshare::VidShared::GetJvm());
-  JNIEnv* env = ats.env();
-
-  _started = false;
-  // Exit critical section to avoid blocking camera thread inside
-  // onIncomingFrame() call.
-  _apiCs->unlock();
-
-  jmethodID j_stop =
-      env->GetMethodID(gs_jclass, "stopCapture", "()Z");
-  return env->CallBooleanMethod(_jcapturer, j_stop) ? 0 : -1;
-}
-
 static int32_t counter = 0;
 int32_t VidCaptureJava::OnIncomingFrame(
         uint8_t *frame,
         int32_t size, int64_t ts) {
 
   os::AutoLock lock(_apiCs);
-  if (_started) {
-    //VideoFrameInfo info;
-    //info.width = 1280;
-    //info.height = 720;
-    //info.color = 1;//eVidFrameColorNV21;
-    //info.timestamp = ts;
-    //info.planes = 2;
+  //VideoFrameInfo info;
+  //info.width = 1280;
+  //info.height = 720;
+  //info.color = 1;//eVidFrameColorNV21;
+  //info.timestamp = ts;
+  //info.planes = 2;
 
-    //_video_cb->onIncomingFrame(vplane, info, _video_cb_ctx);
-    //if (counter++ % 100 == 0)
+  //_video_cb->onIncomingFrame(vplane, info, _video_cb_ctx);
+  //if (counter++ % 100 == 0)
 
-    //encoder.Encode(frame, false, ts);
-    sdkEncoder->enqueue(frame, ts);
-  }
-  return 0;
-}
-
-int32_t VidCaptureJava::onIncomingEvent(int32_t id, int32_t state) {
-
+  encoder.Encode(frame, false, ts);
+  //sdkEncoder->enqueue(frame, ts);
   return 0;
 }
 

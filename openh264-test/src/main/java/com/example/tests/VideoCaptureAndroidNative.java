@@ -18,5 +18,6 @@ public class VideoCaptureAndroidNative extends VideoCaptureAndroid {
                 ProvideCameraFrame(bytes, (int)length, timeStamp, native_capturer);
             }
         });
+        startCapture(1280, 720, 30 * 1000, 30 * 1000);
     }
 }

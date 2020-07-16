@@ -1,9 +1,8 @@
 package com.example.tests;
 
 import android.os.Bundle;
-import android.view.SurfaceView;
-
 import android.support.v7.app.AppCompatActivity;
+import android.view.SurfaceView;
 
 public class TestActivity extends AppCompatActivity {
 
@@ -19,8 +18,8 @@ public class TestActivity extends AppCompatActivity {
     protected  void onResume() {
         super.onResume();
         if (!mIsIint) {
-            VideoCaptureAndroidNative.setLocalPreview(((SurfaceView) findViewById(R.id.test_sf)).getHolder());
             NativeApi.init(getApplicationContext(), ((SurfaceView) findViewById(R.id.test_sf)).getHolder().getSurface());
+            VideoCaptureAndroidNative.setLocalPreview(((SurfaceView) findViewById(R.id.test_sf)).getHolder());
             mIsIint = true;
         }
     }
