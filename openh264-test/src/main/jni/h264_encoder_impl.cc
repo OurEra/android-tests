@@ -189,6 +189,7 @@ int32_t H264EncoderImpl::Encode(const uint8_t* input_frame,
     // API doc says ForceIntraFrame(false) does nothing, but calling this
     // function forces a key frame regardless of the |bIDR| argument's value.
     // (If every frame is a key frame we get lag/delays.)
+    logd("force key");
     openh264_encoder_->ForceIntraFrame(true);
   }
   // EncodeFrame input.
@@ -221,10 +222,10 @@ int32_t H264EncoderImpl::Encode(const uint8_t* input_frame,
   // Split encoded image up into fragments. This also updates |encoded_image_|.
   RtpFragmentize(&encoded_image_, &info);
 
-  logd("timediff : %lld(ms) length %d type %d", (now_ts - b_ts) / 1000000, encoded_image_._length, info.eFrameType);
   // Encoder can skip frames to save bandwidth in which case
   // |encoded_image_._length| == 0.
   if (encoded_image_._length > 0) {
+    logd("timediff : %lld(ms) length %dk type %d", (now_ts - b_ts) / 1000000, encoded_image_._length / 1024, info.eFrameType);
     // Deliver encoded image.
     if (dump_fd_) {
       fwrite(encoded_image_._buffer, encoded_image_._length, 1, dump_fd_);
@@ -251,7 +252,7 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
   encoder_params.iTargetBitrate = target_bps_;
   encoder_params.iMaxBitrate = max_bps_;
   // Rate Control mode
-  encoder_params.iRCMode = RC_QUALITY_MODE;
+  encoder_params.iRCMode = RC_OFF_MODE;
   //encoder_params.iRCMode = RC_BITRATE_MODE;
 
   // The following parameters are extension parameters (they're in SEncParamExt,
@@ -284,6 +285,8 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
   encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceNum = 1;
   encoder_params.sSpatialLayers[0].sSliceArgument.uiSliceMode =
       SM_FIXEDSLCNUM_SLICE;
+  encoder_params.iMaxQp = 36;
+  encoder_params.iMinQp = 10;
   return encoder_params;
 }
 

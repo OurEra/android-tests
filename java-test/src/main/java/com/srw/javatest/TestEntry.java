@@ -2,10 +2,11 @@ package com.srw.javatest;
 
 import com.example.lib.java.FormatLog;
 
+
 public class TestEntry {
 
-    private static final boolean TEST_BYTE_BUFFER = false;
-    private static final boolean TEST_JSON        = true;
+    private static final boolean TEST_BYTE_BUFFER = true;
+    private static final boolean TEST_JSON        = false;
     private static final boolean TEST_STACK_TRACE = false;
     private static final boolean TEST_SYNC        = false;
     private static final boolean TEST_EQUAL       = false;

@@ -9,6 +9,8 @@
 #include <os_assert.h>
 #include "vid_cap_java.h"
 
+static bool USE_SDK_CODEC = false;
+
 static jclass   gs_jclass = NULL;
 
 static const char* const VideoCapPathName   = "com/example/tests/VideoCaptureAndroidNative";
@@ -168,8 +170,10 @@ int32_t VidCaptureJava::Init(uint32_t dev_idx, void *surface) {
   _inited = true;
 
   encoder.InitEncode();
-  sdkEncoder = new SdkCodec("video/avc",true);
-  sdkEncoder->start();
+  if (USE_SDK_CODEC) {
+    sdkEncoder = new SdkCodec("video/avc",true);
+    sdkEncoder->start();
+  }
   return 0;
 }
 
@@ -182,8 +186,10 @@ int32_t VidCaptureJava::DeInit() {
   ats.env()->DeleteGlobalRef(_jcapturer);
   _inited = false;
   encoder.Release();
-  sdkEncoder->stop();
-  delete sdkEncoder;
+  if (USE_SDK_CODEC) {
+    sdkEncoder->stop();
+    delete sdkEncoder;
+  }
   return 0;
 }
 
@@ -203,8 +209,10 @@ int32_t VidCaptureJava::OnIncomingFrame(
   //_video_cb->onIncomingFrame(vplane, info, _video_cb_ctx);
   //if (counter++ % 100 == 0)
 
-  encoder.Encode(frame, false, ts);
-  //sdkEncoder->enqueue(frame, ts);
+  encoder.Encode(frame, ts, false);
+  if (USE_SDK_CODEC) {
+    sdkEncoder->enqueue(frame, ts);
+  }
   return 0;
 }
 

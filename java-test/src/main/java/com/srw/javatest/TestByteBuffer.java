@@ -3,6 +3,8 @@ package com.srw.javatest;
 import com.example.lib.java.FormatLog;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
 
 public class TestByteBuffer extends BaseTest {
 
@@ -11,6 +13,7 @@ public class TestByteBuffer extends BaseTest {
     void test() {
 
         testObj = ByteBuffer.allocate(5);
+        FormatLog.LogI("has arrary " + testObj.hasArray());
         dump("allocate");
         testObj.limit(4);
         dump("limit");
@@ -33,6 +36,16 @@ public class TestByteBuffer extends BaseTest {
 
         ByteBuffer readonly = testObj.asReadOnlyBuffer();
         FormatLog.LogI("attr read " + readonly.get() + " mark " + readonly.mark());
+
+        // test byte order
+        int testInt = 0x12345678;
+        ByteBuffer testOrder = ByteBuffer.allocate(10);
+        testOrder.order(ByteOrder.BIG_ENDIAN);
+        testOrder.putInt(testInt);
+        testOrder.order(ByteOrder.LITTLE_ENDIAN);
+        testOrder.putInt(testInt);
+        FormatLog.LogI("order buffer: " + Arrays.toString(testOrder.array()));
+
     }
 
     void dump(String mark) {

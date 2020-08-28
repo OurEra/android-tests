@@ -20,7 +20,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         isPermissionOK();
 
-        Log.d("srwDebug", "path: " + Environment.getExternalStorageDirectory().getAbsolutePath());
         VideoCaptureDeviceInfoAndroid.getDeviceInfo();
         ((Button)findViewById(R.id.btn_start)).setOnClickListener(new View.OnClickListener() {
             @Override
