@@ -1,8 +1,6 @@
 include ':camera-lib'
 include ':camera-test'
-include ':java-test'
 include ':openh264-test'
-include ':java-lib'
 include ':unit-test'
 include ':android-utils'
 include ':android-ui-lib'
