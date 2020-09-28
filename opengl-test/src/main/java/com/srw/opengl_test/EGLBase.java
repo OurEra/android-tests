@@ -19,7 +19,7 @@ public class EGLBase {
 	private EGLContext mContext;
 	private EGLSurface mSurface = EGL14.EGL_NO_SURFACE;
 
-	private static final String TAG = EGLBase.class.getSimpleName();
+	private static final String TAG = "GLTEST-" + EGLBase.class.getSimpleName();
 
 	public static final int[] CONFIG_PLAIN = {
 		EGL10.EGL_RED_SIZE, 8,
