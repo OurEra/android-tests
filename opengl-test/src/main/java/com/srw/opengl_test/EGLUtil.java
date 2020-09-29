@@ -14,6 +14,8 @@ import com.srw.utils.BitmapOperations;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class EGLUtil {
 
@@ -45,6 +47,35 @@ public class EGLUtil {
         return fb;
     }
 
+   /** Converts android.graphics.Matrix to a float[16] matrix array. */
+   public static float[] convertMatrixFromAndroidGraphicsMatrix(android.graphics.Matrix matrix) {
+     float[] values = new float[9];
+     matrix.getValues(values);
+
+     // The android.graphics.Matrix looks like this:
+     // [x1 y1 w1]
+     // [x2 y2 w2]
+     // [x3 y3 w3]
+     // We want to contruct a matrix that looks like this:
+     // [x1 y1  0 w1]
+     // [x2 y2  0 w2]
+     // [ 0  0  1  0]
+     // [x3 y3  0 w3]
+     // Since it is stored in column-major order, it looks like this:
+     // [x1 x2 0 x3
+     //  y1 y2 0 y3
+     //   0  0 1  0
+     //  w1 w2 0 w3]
+     // clang-format off
+     float[] matrix4x4 = {
+         values[0 * 3 + 0],  values[1 * 3 + 0], 0,  values[2 * 3 + 0],
+         values[0 * 3 + 1],  values[1 * 3 + 1], 0,  values[2 * 3 + 1],
+         0,                  0,                 1,  0,
+         values[0 * 3 + 2],  values[1 * 3 + 2], 0,  values[2 * 3 + 2],
+     };
+     // clang-format on
+     return matrix4x4;
+   }
 
     public static int generateTexture() {
         int[] textureHandles = new int[1];
@@ -69,7 +100,11 @@ public class EGLUtil {
         paint.setAlpha(0);
         paint.setAntiAlias(true);
         paint.setColor(Color.RED);
-        c.drawText(System.currentTimeMillis() + "MS", 200, 200, paint);
+        // just draw date
+        String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
+        Date date = new Date(System.currentTimeMillis());
+        SimpleDateFormat sf = new SimpleDateFormat(DATE_PATTERN);
+        c.drawText(sf.format(date), 200, 200, paint);
 
 		// read to byte buffer
         int length = b.getWidth() * b.getHeight() * 4;

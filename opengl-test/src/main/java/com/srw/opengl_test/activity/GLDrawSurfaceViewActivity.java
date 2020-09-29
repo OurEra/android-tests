@@ -66,11 +66,14 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
         public void run() {
             if (mEGLBase != null) {
                 EGLUtil.uploadBitmapToTexture(mTexture, 800, 800);
-                float[] IDENTITY_MATRIX = new float[16];
-                android.opengl.Matrix.setIdentityM(IDENTITY_MATRIX, 0);
-                mDrawer.drawTexture(mTexture, 800, 800, IDENTITY_MATRIX);
+
+                // darw buffer starting at top-left corner, not bottom-left.
+                final android.graphics.Matrix renderMatrix = new android.graphics.Matrix();
+                renderMatrix.preTranslate(0.5f, 0.5f);
+                renderMatrix.preScale(1f, -1f);
+                renderMatrix.preTranslate(-0.5f, -0.5f);
+                mDrawer.drawTexture(mTexture, 800, 800, EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
                 mEGLBase.swapBuffers();
-			    Log.i(TAG, "draw ...");
             }
             mWorkHandler.postDelayed(this, 100);
         }

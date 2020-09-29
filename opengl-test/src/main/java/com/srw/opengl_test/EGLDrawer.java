@@ -17,6 +17,35 @@ public class EGLDrawer {
         1.0f,    1.0f   // Top right
     });
 
+    /**
+     * from bottom left to top right
+     * ----->
+     *-
+     * -
+     *  -
+     *   -
+     *    -
+     *     -
+     * *****>
+     * 0.0f,   0.0f, // Bottom left
+     * 1.0f,   0.0f, // Bottom right
+     * 0.0f,   1.0f, // Top left
+     * 1.0f,   1.0f // Top right
+     *
+     * from top left to bottom right, this can draw a texture to right direction
+     * *****>
+     *     -
+     *    -
+     *   -
+     *  -
+     * -
+     *-
+     * ----->
+     * 0.0f,   1.0f, // Top left
+     * 1.0f,   1.0f, // Top right
+     * 0.0f,   0.0f, // Bottom left
+     * 1.0f,   0.0f, // Bottom right
+     **/
     public static FloatBuffer TEXTURE_COOR_BUFFER = EGLUtil.convertToFloatBuffer(new float[] {
         0.0f,   0.0f, // Bottom left
         1.0f,   0.0f, // Bottom right
