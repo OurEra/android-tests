@@ -1,6 +1,7 @@
 package com.srw.opengl_test;
 
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 import android.util.Log;
 
 import java.nio.FloatBuffer;
@@ -41,9 +42,6 @@ public class EGLDrawer {
             "  gl_FragColor = texture2D(tex, out_tc);\n" +
             "}\n";
 
-
-    //  "  gl_FragColor = texture2D(tex, out_tc);\n" +
-    //  "  gl_FragColor = vec4(0.1, 0.2, 0.3, 1.0);\n" +
     private EGLShader mShader;
     // "in_pos"
     private int inPosAttrLocation;
@@ -60,6 +58,8 @@ public class EGLDrawer {
 
         GLES20.glViewport(0, 0, viewWidth, viewHeight);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        EGLUtil.checkGlError("glDrawArrays");
+
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
     }
 
@@ -81,6 +81,7 @@ public class EGLDrawer {
         // upload vertex coordinate
         GLES20.glEnableVertexAttribArray(inPosAttrLocation);
         GLES20.glVertexAttribPointer(inPosAttrLocation, 2, GLES20.GL_FLOAT, false, 0, VERTEX_COOR_BUFFER);
+        EGLUtil.checkGlError("glVertexAttribPointer");
 
         // upload texture coordinate
         GLES20.glEnableVertexAttribArray(inTcAttrLocation);

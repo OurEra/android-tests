@@ -35,7 +35,7 @@ public class EGLShader {
     private int compileShader(int shaderType, String source) {
         int shader = GLES20.glCreateShader(shaderType);
         if (shader == 0) {
-            throw new RuntimeException("glCreateShader failed");
+            throw new RuntimeException("glCreateShader failed " + + GLES20.glGetError());
         }
         GLES20.glShaderSource(shader, source);
         GLES20.glCompileShader(shader);

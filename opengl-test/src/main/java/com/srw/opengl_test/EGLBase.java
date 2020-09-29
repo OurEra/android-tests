@@ -7,6 +7,7 @@ import android.opengl.EGLContext;
 import android.opengl.EGLDisplay;
 import android.opengl.EGLSurface;
 import android.util.Log;
+import android.view.Surface;
 
 import javax.microedition.khronos.egl.EGL10;
 
@@ -22,11 +23,12 @@ public class EGLBase {
 	private static final String TAG = "GLTEST-" + EGLBase.class.getSimpleName();
 
 	public static final int[] CONFIG_PLAIN = {
-		EGL10.EGL_RED_SIZE, 8,
-	    EGL10.EGL_GREEN_SIZE, 8,
-	    EGL10.EGL_BLUE_SIZE, 8,
-	    EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
-	    EGL10.EGL_NONE
+        EGL10.EGL_RED_SIZE, 8,
+        EGL10.EGL_GREEN_SIZE, 8,
+        EGL10.EGL_BLUE_SIZE, 8,
+        EGL10.EGL_ALPHA_SIZE, 8,
+        EGL10.EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+        EGL10.EGL_NONE
 	};
 
 	public EGLBase(int[] attrs) {
@@ -46,6 +48,18 @@ public class EGLBase {
 		mSurface = EGL14.eglCreateWindowSurface(mDisplay, mConfig, surfaceTexture, surfaceAttribs, 0);
 		Log.i(TAG, "EGLSurface " + mSurface);
 	}
+
+    public void createEGLSurface(Surface surface) {
+        if (mSurface != EGL14.EGL_NO_SURFACE) {
+            throw new RuntimeException("Already have EGLSurface");
+        }
+        if (surface == null) {
+            throw new RuntimeException("Invalid texutre instance");
+        }
+        int[] surfaceAttribs = {EGL14.EGL_NONE};
+        mSurface = EGL14.eglCreateWindowSurface(mDisplay, mConfig, surface, surfaceAttribs, 0);
+        Log.i(TAG, "EGLSurface " + mSurface);
+    }
 
 	public void makeCurrent() {
 		if (mSurface == EGL14.EGL_NO_SURFACE) {
