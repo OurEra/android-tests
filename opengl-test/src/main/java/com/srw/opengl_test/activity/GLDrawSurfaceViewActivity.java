@@ -42,7 +42,7 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
                     mEGLBase.createEGLSurface(holder.getSurface());
                     mEGLBase.makeCurrent();
 
-                    mTexture = EGLUtil.generateTexture(640, 480);
+                    mTexture = EGLUtil.generateTexture();
                     Log.i(TAG, "handle " + mTexture);
                 });
             }
@@ -65,13 +65,14 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
         @Override
         public void run() {
             if (mEGLBase != null) {
+                EGLUtil.uploadBitmapToTexture(mTexture, 800, 800);
                 float[] IDENTITY_MATRIX = new float[16];
                 android.opengl.Matrix.setIdentityM(IDENTITY_MATRIX, 0);
                 mDrawer.drawTexture(mTexture, 800, 800, IDENTITY_MATRIX);
                 mEGLBase.swapBuffers();
 			    Log.i(TAG, "draw ...");
             }
-            mWorkHandler.postDelayed(this, 1000);
+            mWorkHandler.postDelayed(this, 100);
         }
     }
 

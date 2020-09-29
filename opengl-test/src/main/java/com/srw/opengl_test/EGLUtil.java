@@ -45,7 +45,18 @@ public class EGLUtil {
         return fb;
     }
 
-    public static int generateTexture(int width, int height) {
+
+    public static int generateTexture() {
+        int[] textureHandles = new int[1];
+        int textureHandle;
+
+        GLES20.glGenTextures(1, textureHandles, 0);
+        textureHandle = textureHandles[0];
+        EGLUtil.checkGlError("glGenTextures");
+        return textureHandle;
+    }
+
+    public static void uploadBitmapToTexture(int texture, int width, int height) {
         Bitmap b = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         Paint paint = new Paint();
         Canvas c = new Canvas(b);
@@ -58,7 +69,7 @@ public class EGLUtil {
         paint.setAlpha(0);
         paint.setAntiAlias(true);
         paint.setColor(Color.RED);
-        c.drawText(System.currentTimeMillis() + "MS", 30, 40, paint);
+        c.drawText(System.currentTimeMillis() + "MS", 200, 200, paint);
 
 		// read to byte buffer
         int length = b.getWidth() * b.getHeight() * 4;
@@ -72,15 +83,8 @@ public class EGLUtil {
         BitmapOperations.saveBitmapToFile(b, "/sdcadr/test_gl.png");
 
         // upload to texture
-        int[] textureHandles = new int[1];
-        int textureHandle;
-
-        GLES20.glGenTextures(1, textureHandles, 0);
-        textureHandle = textureHandles[0];
-        EGLUtil.checkGlError("glGenTextures");
-
         // Bind the texture handle to the 2D texture target.
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
 
         // Configure min/mag filtering, i.e. what scaling method do we use if what we're rendering
         // is smaller or larger than the source image.
@@ -98,6 +102,5 @@ public class EGLUtil {
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, /*level*/ 0, GLES20.GL_RGBA,
                 width, height, /*border*/ 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, pixels);
         EGLUtil.checkGlError("loadImageTexture");
-        return textureHandle;
     }
 }
