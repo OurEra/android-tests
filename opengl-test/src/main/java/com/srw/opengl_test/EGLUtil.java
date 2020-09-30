@@ -84,6 +84,17 @@ public class EGLUtil {
         GLES20.glGenTextures(1, textureHandles, 0);
         textureHandle = textureHandles[0];
         EGLUtil.checkGlError("glGenTextures");
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle);
+        // Configure min/mag filtering, i.e. what scaling method do we use if what we're rendering
+        // is smaller or larger than the source image.
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER,
+                GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER,
+                GLES20.GL_LINEAR);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S,
+                GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T,
+                GLES20.GL_CLAMP_TO_EDGE);
         return textureHandle;
     }
 
@@ -115,23 +126,11 @@ public class EGLUtil {
         b.copyPixelsToBuffer(pixels);
         pixels.position(0);
 
-        BitmapOperations.saveBitmapToFile(b, "/sdcadr/test_gl.png");
+        //BitmapOperations.saveBitmapToFile(b, "/sdcard/test_gl.png");
 
         // upload to texture
         // Bind the texture handle to the 2D texture target.
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
-
-        // Configure min/mag filtering, i.e. what scaling method do we use if what we're rendering
-        // is smaller or larger than the source image.
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER,
-                GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER,
-                GLES20.GL_LINEAR);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S,
-                GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T,
-                GLES20.GL_CLAMP_TO_EDGE);
-        EGLUtil.checkGlError("loadImageTexture");
 
         // Load the data from the buffer into the texture handle.
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, /*level*/ 0, GLES20.GL_RGBA,
