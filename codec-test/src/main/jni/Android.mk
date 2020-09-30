@@ -12,7 +12,7 @@ include $(ROOT_PATH)/../thirdparty/libyuv/module.mk
 include $(CLEAR_VARS)
 LOCAL_MODULE := qntest
                       
-LOCAL_LDLIBS := -L$(ROOT_PATH)/../thirdparty -lz -llog -landroid -lmediandk -lopenh264
+LOCAL_LDLIBS := -L$(ROOT_PATH)/../thirdparty/openh264/lib -lz -llog -landroid -lmediandk -lopenh264
 LOCAL_CPPFLAGS := -std=c++11
 LOCAL_C_INCLUDES := $(ROOT_PATH)/../thirdparty/openh264
 LOCAL_SRC_FILES := $(ROOT_PATH)/../vid_cap_java.cpp $(ROOT_PATH)/../test_jni.cpp \
