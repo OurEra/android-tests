@@ -1,7 +1,7 @@
 #include <jni.h>
 
-#ifndef __V7TEST_NATIVE_API_H__
-#define __V7TEST_NATIVE_API_H__
+#ifndef _NATIVE_API_H__
+#define _NATIVE_API_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,4 +19,4 @@ JNIEXPORT jint JNICALL JNI_API(deinit)
 }
 #endif
 
-#endif // __V7TEST_NATIVE_API_H__
+#endif //

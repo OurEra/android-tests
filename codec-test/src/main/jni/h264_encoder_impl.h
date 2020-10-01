@@ -2,43 +2,21 @@
 #define H264_ENCODER_IMPL_H_
 
 #include "svc/codec_app_def.h"
-#include <stdint.h>
+#include "encoder_base.h"
 #include <memory>
 
 class ISVCEncoder;
-
-namespace qiniutest {
-
-struct EncodedImage {
-  uint8_t* _buffer;
-  size_t _length;
-  size_t _size;
-};
-
-struct EncodedStats {
-
-  int32_t _max_ms;
-  int32_t _min_ms;
-  int32_t _aver_ms;
-};
-
-class H264EncoderImpl {
+class H264EncoderImpl : public EncoderBase {
 
  public:
   explicit H264EncoderImpl();
   ~H264EncoderImpl();
 
-  // |max_payload_size| is ignored.
-  // The following members of |codec_settings| are used. The rest are ignored.
-  // - codecType (must be kVideoCodecH264)
-  // - targetBitrate
-  // - maxFramerate
-  // - width
-  // - height
-  int32_t InitEncode();
-  int32_t Release();
-
-  int32_t Encode(const uint8_t* frame, long long ts, bool force_key);
+  // implements EncoderBase
+  virtual int32_t InitEncode(CodecSetting& setting);
+  virtual void    RegisterCallback(EncodeCallback * callback) { callback_ = callback; }
+  virtual int32_t Encode(const uint8_t* frame, long long ts, bool force_key);
+  virtual int32_t Release();
 
  private:
   bool IsInitialized() const;
@@ -58,12 +36,10 @@ class H264EncoderImpl {
   int32_t number_of_cores_;
 
   FILE* dump_fd_;
-
+  EncodeCallback *callback_;
   EncodedImage encoded_image_;
   EncodedStats stats_;
   std::unique_ptr<uint8_t[]> encoded_image_buffer_;
 };
-
-}  // namespace qiniutest
 
 #endif  // H264_ENCODER_IMPL_H_

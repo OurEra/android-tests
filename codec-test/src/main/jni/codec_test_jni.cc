@@ -2,16 +2,15 @@
 #include <os_log.h>
 #include <shared_resource.h>
 #include <android/native_window_jni.h>
-#include "testNativeAPI.h"
+#include "codec_test_jni.h"
 #include "vid_cap_java.h"
-#include "sdk_codec.h"
 
 static JavaVM* gs_vm = NULL;
 
 static jobject surface = NULL;
 static ANativeWindow* windows = NULL;
 
-static qiniutest::VidCaptureJava *capture = NULL;
+static VidCaptureJava *capture = NULL;
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,10 +23,10 @@ JNIEXPORT jint JNI_API(init)
   windows = ANativeWindow_fromSurface(env, surface);
 
   kvidshare::VidShared::setJavaRes(gs_vm, context);
-  qiniutest::InitCaptureJavaRes(true);
-  qiniutest::InitCodecJavaRes(true);
+  InitCaptureJavaRes(true);
+  InitCodecJavaRes(true);
 
-  capture = new qiniutest::VidCaptureJava();
+  capture = new VidCaptureJava();
   capture->Init(1, windows);
 
   return 0;
@@ -36,8 +35,8 @@ JNIEXPORT jint JNI_API(init)
 JNIEXPORT jint JNI_API(deinit)
 (JNIEnv *env, jobject) {
 
-  qiniutest::InitCaptureJavaRes(false);
-  qiniutest::InitCodecJavaRes(false);
+  InitCaptureJavaRes(false);
+  InitCodecJavaRes(false);
   ANativeWindow_release(windows);
   if (surface)
     env->DeleteGlobalRef(surface);

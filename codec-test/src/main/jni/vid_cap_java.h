@@ -1,12 +1,10 @@
-#ifndef _MEDIACTRL_SDK_VID_CAPTURE_JAVA_H_
-#define _MEDIACTRL_SDK_VID_CAPTURE_JAVA_H_
+#ifndef VID_CAPTURE_JAVA_H_
+#define VID_CAPTURE_JAVA_H_
 
 #include <jni.h>
 #include <os_mutex.h>
 #include "h264_encoder_impl.h"
-#include "sdk_codec.h"
-
-namespace qiniutest {
+#include "sdk_codec_impl.h"
 
 int32_t InitCaptureJavaRes(bool init);
 
@@ -26,9 +24,8 @@ private:
   jobject _jcapturer;// Global ref to Java VideoCaptureAndroid object.
   bool _inited;
   H264EncoderImpl encoder;
-  SdkCodec* sdkEncoder;
+  SdkCodecImpl* sdkEncoder;
   os::Mutex *_apiCs;
 };
 
-}//namespace qiniutest
-#endif // _MEDIACTRL_SDK_VID_CAPTURE_JAVA_H_
+#endif

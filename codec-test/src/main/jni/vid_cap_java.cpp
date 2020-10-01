@@ -1,4 +1,4 @@
-#define LOGTAG "srwDebug"
+#define LOGTAG "CODEC-vid-cap"
 #include <os_log.h>
 #include <string.h>
 
@@ -46,8 +46,8 @@ void JNICALL ProvideCameraFrame(
     jlong context) {
 
   //TODO: FIXME deliver frame
-  qiniutest::VidCaptureJava* capture =
-      reinterpret_cast<qiniutest::VidCaptureJava*>(
+  VidCaptureJava* capture =
+      reinterpret_cast<VidCaptureJava*>(
           context);
 
   jbyte* frame = env->GetByteArrayElements(javaCameraFrame, NULL);
@@ -74,8 +74,6 @@ static int32_t jstring2chars(JNIEnv *env, jstring  jstr, char *szBuf, int32_t si
   env->DeleteLocalRef(barr);
   return bsuccess;
 }
-
-namespace qiniutest {
 
 int32_t InitCaptureJavaRes(bool init) {
   logd("init srwDebug");
@@ -169,10 +167,16 @@ int32_t VidCaptureJava::Init(uint32_t dev_idx, void *surface) {
   CHECK(_jcapturer);
   _inited = true;
 
-  encoder.InitEncode();
+  CodecSetting settings;
+  settings.width = 1280;
+  settings.height = 720;
+  settings.bitrate = 2000 * 1000;
+  settings.keyinterval = 70;
+  settings.framerate= 25;
+  encoder.InitEncode(settings);
   if (USE_SDK_CODEC) {
-    sdkEncoder = new SdkCodec("video/avc",true);
-    sdkEncoder->start();
+    sdkEncoder = new SdkCodecImpl();
+    sdkEncoder->InitEncode(settings);
   }
   return 0;
 }
@@ -187,7 +191,7 @@ int32_t VidCaptureJava::DeInit() {
   _inited = false;
   encoder.Release();
   if (USE_SDK_CODEC) {
-    sdkEncoder->stop();
+    sdkEncoder->Release();
     delete sdkEncoder;
   }
   return 0;
@@ -211,9 +215,7 @@ int32_t VidCaptureJava::OnIncomingFrame(
 
   encoder.Encode(frame, ts, false);
   if (USE_SDK_CODEC) {
-    sdkEncoder->enqueue(frame, ts);
+    sdkEncoder->Encode(frame, ts, false);
   }
   return 0;
 }
-
-}  // namespace qiniutest

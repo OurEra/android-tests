@@ -1,4 +1,4 @@
-#define LOGTAG "srwDebug"
+#define LOGTAG "CODEC-h264-encoder"
 #include "h264_encoder_impl.h"
 #include <os_log.h>
 #include <os_time.h>
@@ -13,9 +13,6 @@ const bool kOpenH264EncoderDetailedLogging = false;
 // QP scaling thresholds.
 static const int kLowH264QpThreshold = 24;
 static const int kHighH264QpThreshold = 37;
-
-
-namespace qiniutest {
 
 int CalcBufferSize(int width, int height) {
 
@@ -55,7 +52,7 @@ static void RtpFragmentize(EncodedImage* encoded_image,
   // the data to |encoded_image->_buffer|.
   const uint8_t start_code[4] = {0, 0, 0, 1};
   size_t frag = 0;
-  encoded_image->_length = 0;
+  encoded_image->length = 0;
   for (int layer = 0; layer < info->iLayerNum; ++layer) {
     const SLayerBSInfo& layerInfo = info->sLayerInfo[layer];
     // Iterate NAL units making up this layer, noting fragments.
@@ -66,10 +63,10 @@ static void RtpFragmentize(EncodedImage* encoded_image,
       layer_len += layerInfo.pNalLengthInByte[nal];
     }
     // Copy the entire layer's data (including start codes).
-    memcpy(encoded_image->_buffer + encoded_image->_length,
+    memcpy(encoded_image->buffer + encoded_image->length,
            layerInfo.pBsBuf,
            layer_len);
-    encoded_image->_length += layer_len;
+    encoded_image->length += layer_len;
   }
 }
 
@@ -94,7 +91,7 @@ bool H264EncoderImpl::IsInitialized() const {
   return openh264_encoder_ != NULL;
 }
 
-int32_t H264EncoderImpl::InitEncode() {
+int32_t H264EncoderImpl::InitEncode(CodecSetting& setting) {
 
   int32_t release_ret = Release();
   if (release_ret != 0) {
@@ -124,14 +121,14 @@ int32_t H264EncoderImpl::InitEncode() {
 
   number_of_cores_ = 1;
   // Set internal settings from codec_settings
-  width_ = 1280;
-  height_ = 720;
-  max_frame_rate_ = 15;
+  width_ = setting.width;
+  height_ = setting.height;
+  max_frame_rate_ = setting.framerate;
   frame_dropping_on_ = 1;
-  key_frame_interval_ = 3000;
+  key_frame_interval_ = setting.keyinterval;
 
-  max_bps_ = 2500 * 1000;
-  target_bps_ = 300 * 1000;
+  max_bps_ = setting.bitrate;
+  target_bps_ = setting.bitrate;
 
   SEncParamExt encoder_params = CreateEncoderParams();
   logd("period %d", encoder_params.uiIntraPeriod);
@@ -148,15 +145,15 @@ int32_t H264EncoderImpl::InitEncode() {
                                &video_format);
 
   // Initialize encoded image. Default buffer size: size of unencoded data.
-  encoded_image_._size = CalcBufferSize(1280, 720);
-  encoded_image_._buffer = new uint8_t[encoded_image_._size];
-  encoded_image_buffer_.reset(encoded_image_._buffer);
-  encoded_image_._length = 0;
+  encoded_image_.size = CalcBufferSize(width_, height_);
+  encoded_image_.buffer = new uint8_t[encoded_image_.size];
+  encoded_image_buffer_.reset(encoded_image_.buffer);
+  encoded_image_.length = 0;
 
   SBitrateInfo target_bitrate;
   memset(&target_bitrate, 0, sizeof(SBitrateInfo));
   target_bitrate.iLayer = SPATIAL_LAYER_ALL,
-  target_bitrate.iBitrate = 800 * 1000;
+  target_bitrate.iBitrate = target_bps_;
   openh264_encoder_->SetOption(ENCODER_OPTION_BITRATE,
                                &target_bitrate);
   openh264_encoder_->SetOption(ENCODER_OPTION_FRAME_RATE, &max_frame_rate_);
@@ -170,7 +167,7 @@ int32_t H264EncoderImpl::Release() {
     WelsDestroySVCEncoder(openh264_encoder_);
     openh264_encoder_ = nullptr;
   }
-  encoded_image_._buffer = NULL;
+  encoded_image_.buffer = NULL;
   encoded_image_buffer_.reset();
   if (dump_fd_)
     fclose(dump_fd_);
@@ -195,16 +192,16 @@ int32_t H264EncoderImpl::Encode(const uint8_t* input_frame,
   // EncodeFrame input.
   SSourcePicture picture;
   memset(&picture, 0, sizeof(SSourcePicture));
-  picture.iPicWidth = 1280;
-  picture.iPicHeight = 720;
+  picture.iPicWidth = width_;
+  picture.iPicHeight = height_;
   picture.iColorFormat = EVideoFormatType::videoFormatI420;
   picture.uiTimeStamp = ts;
-  picture.iStride[0] = 1280;
-  picture.iStride[1] = 1280 / 2;
-  picture.iStride[2] = 1280 / 2;
+  picture.iStride[0] = width_;
+  picture.iStride[1] = width_ / 2;
+  picture.iStride[2] = width_ / 2;
   picture.pData[0] = const_cast<uint8_t*>(input_frame);
-  picture.pData[1] = const_cast<uint8_t*>(input_frame + 1280 * 720);
-  picture.pData[2] = const_cast<uint8_t*>(picture.pData[1] + 1280 * 720 / 4);
+  picture.pData[1] = const_cast<uint8_t*>(input_frame + width_ * height_);
+  picture.pData[2] = const_cast<uint8_t*>(picture.pData[1] + width_* height_/ 4);
 
   // EncodeFrame output.
   SFrameBSInfo info;
@@ -213,7 +210,7 @@ int32_t H264EncoderImpl::Encode(const uint8_t* input_frame,
   // Encode!
   int64_t b_ts = os_get_monitictime();
   int enc_ret = openh264_encoder_->EncodeFrame(&picture, &info);
-  int64_t now_ts =os_get_monitictime();
+  int64_t now_ts = os_get_monitictime();
   if (enc_ret != 0) {
     loge("OpenH264 frame encoding failed, EncodeFrame returned %d", enc_ret);
     return -1;
@@ -223,12 +220,15 @@ int32_t H264EncoderImpl::Encode(const uint8_t* input_frame,
   RtpFragmentize(&encoded_image_, &info);
 
   // Encoder can skip frames to save bandwidth in which case
-  // |encoded_image_._length| == 0.
-  if (encoded_image_._length > 0) {
-    logd("timediff : %lld(ms) length %dk type %d", (now_ts - b_ts) / 1000000, encoded_image_._length / 1024, info.eFrameType);
+  // |encoded_image_.length| == 0.
+  if (encoded_image_.length > 0) {
+    logd("timediff : %lld(ms) length %dk type %d", (now_ts - b_ts) / 1000000, encoded_image_.length / 1024, info.eFrameType);
     // Deliver encoded image.
+    if (callback_) {
+      callback_->onEncoded(encoded_image_);
+    }
     if (dump_fd_) {
-      fwrite(encoded_image_._buffer, encoded_image_._length, 1, dump_fd_);
+      fwrite(encoded_image_.buffer, encoded_image_.length, 1, dump_fd_);
       fflush(dump_fd_);
     }
 
@@ -289,5 +289,3 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
   encoder_params.iMinQp = 10;
   return encoder_params;
 }
-
-}  // namespace qiniutest

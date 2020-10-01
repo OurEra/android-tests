@@ -4,33 +4,13 @@
 
 X264EncoderImpl::X264EncoderImpl() {
   bitratelevel = STANDARD_LEVEL;
-  qp_max = 30;
-  qp_min = 0;
-  i_fps = 20;
-  i_keyint_max = 300;
-  width = 352;
-  height = 288;
-
   frameNo = 0;
-  isForceIDRFrameEnabled = false;
-
   pParameter = NULL;
-  X264EncoderImplHandle = NULL;
-  //    pPicture = NULL;
-  pOutput = NULL;
+  encoderHandler_ = NULL;
 }
 
 X264EncoderImpl::~X264EncoderImpl() {
-  closeX264EncoderImpl();
-}
-
-void X264EncoderImpl::setSourceFormat(unsigned int sourcformat) {
-  sourceFormat = sourcformat;
-}
-
-void X264EncoderImpl::setResolution(unsigned int w, unsigned int h) {
-  width = w;
-  height = h;
+  Release();
 }
 
 void X264EncoderImpl::setBitrate(unsigned int i_bitrate) {
@@ -49,67 +29,45 @@ void X264EncoderImpl::setBitrate(unsigned int i_bitrate) {
   }
 }
 
-void X264EncoderImpl::setFps(unsigned int fps) {
-  i_fps = fps;
-}
+int32_t X264EncoderImpl::InitEncode(CodecSetting& setting) {
+  Release();
 
-void X264EncoderImpl::setI_KeyInt_Max(unsigned int i_frame_max) {
-  i_keyint_max = i_frame_max;
-}
-
-void X264EncoderImpl::setQp_Max(unsigned int qp_max) {
-  qp_max = qp_max;
-}
-
-void X264EncoderImpl::setQp_Min(unsigned int qp_min) {
-  qp_min = qp_min;
-}
-
-bool X264EncoderImpl::openX264EncoderImpl() {
-  closeX264EncoderImpl();
-
-  if(!pParameter)
-  {
-      pParameter = (x264_param_t *)malloc(sizeof(x264_param_t));
-
-      if (!pParameter) {
-          this->closeX264EncoderImpl();
-
-          return false;
-      }
-
-      memset(pParameter, 0, sizeof(x264_param_t));
+  if(!pParameter) {
+    pParameter = (x264_param_t *)malloc(sizeof(x264_param_t));
+    if (!pParameter) {
+      Release();
+      return false;
+    }
+    memset(pParameter, 0, sizeof(x264_param_t));
   }
 
   int ret = x264_param_default_preset(pParameter, "ultrafast", "zerolatency");
   if (ret != 0) {
-
-      this->closeX264EncoderImpl();
-
-      return false;
+    Release();
+    return false;
   }
+
+  codecSetting_ = setting;
 
   pParameter->i_level_idc = 30;
 
-  pParameter->i_width = width;
-  pParameter->i_height = height;
+  pParameter->i_width = codecSetting_.width;
+  pParameter->i_height = codecSetting_.height;
 
   pParameter->b_deterministic = 1;
-//  pParameter->b_sliced_threads = 1;
+  //pParameter->b_sliced_threads = 1;
   pParameter->i_threads = 1;
 
-  pParameter->i_csp = X264_CSP_I420;//X264_CSP_NV12;//X264_CSP_I420;
+  pParameter->i_csp = X264_CSP_I420;
 
-  pParameter->i_fps_num = i_fps;
+  pParameter->i_fps_num = codecSetting_.framerate;
   pParameter->i_fps_den = 1;
   pParameter->i_bframe = 0;
-  pParameter->i_keyint_max = i_keyint_max;
+  pParameter->i_keyint_max = codecSetting_.keyinterval;
 
-//  pParameter->b_open_gop = 1;
-
-//  pParameter->rc.i_bitrate = i_bitrate;
-
-  pParameter->rc.i_rc_method = X264_RC_CRF;//X264_RC_CQP;
+  //pParameter->b_open_gop = 1;
+  //pParameter->rc.i_bitrate = i_bitrate;
+  pParameter->rc.i_rc_method = X264_RC_CRF;
 
   if (this->bitratelevel == LOW_LEVEL) {
     pParameter->rc.f_rf_constant = 32;
@@ -126,7 +84,6 @@ bool X264EncoderImpl::openX264EncoderImpl() {
   current_f_rf_constant = pParameter->rc.f_rf_constant;
   userSetting_f_rf_constant = pParameter->rc.f_rf_constant;
 
-  // from huxiaopeng
   pParameter->analyse.b_transform_8x8 = 1;
   pParameter->rc.f_aq_strength = 1.5;
 
@@ -139,11 +96,11 @@ bool X264EncoderImpl::openX264EncoderImpl() {
   pParameter->analyse.i_me_method = X264_ME_DIA;
   pParameter->analyse.i_me_range = 16;
   pParameter->analyse.i_subpel_refine = 2;
-  //  pParameter->analyse.i_noise_reduction = 1;
+  //pParameter->analyse.i_noise_reduction = 1;
 
   pParameter->i_slice_max_size = 1200;
 
-//  pParameter->i_nal_hrd = X264_NAL_HRD_NONE;
+  //pParameter->i_nal_hrd = X264_NAL_HRD_NONE;
 
   pParameter->b_deblocking_filter = 1;
   pParameter->i_deblocking_filter_alphac0 = 4;
@@ -154,54 +111,19 @@ bool X264EncoderImpl::openX264EncoderImpl() {
   pParameter->i_log_level = X264_LOG_NONE;
 
   if(x264_param_apply_profile(pParameter, "baseline")) {
-    closeX264EncoderImpl();
+    Release();
     return false;
   }
 
-  if (!X264EncoderImplHandle) {
-    X264EncoderImplHandle = x264_encoder_open(pParameter);
+  if (!encoderHandler_) {
+    encoderHandler_ = x264_encoder_open(pParameter);
 
-    if (!X264EncoderImplHandle) {
-      closeX264EncoderImpl();
-      return false;
+    if (!encoderHandler_) {
+      Release();
+      return -1;
     }
   }
-
-  /*
-  if (!pPicture) {
-  pPicture = (x264_picture_t *)malloc(sizeof(x264_picture_t));
-
-  if (!pPicture) {
-
-  this->closeX264EncoderImpl();
-
-  return false;
-  }
-
-  memset(pPicture, 0, sizeof(x264_picture_t));
-  }
-
-  if (x264_picture_alloc(pPicture, X264_CSP_I420, width, height)) {
-
-  this->closeX264EncoderImpl();
-
-  return false;
-  }
-  */
-
-  if (!pOutput) {
-    pOutput = (x264_picture_t *)malloc(sizeof(x264_picture_t));
-    if (!pOutput) {
-      this->closeX264EncoderImpl();
-      return false;
-    }
-    memset(pOutput, 0, sizeof(x264_picture_t));
-  }
-  return true;
-}
-
-void X264EncoderImpl::forceIDRFrame() {
-  isForceIDRFrameEnabled = true;
+  return 0;
 }
 
 void X264EncoderImpl::upgradeBitrateLevel() {
@@ -232,14 +154,14 @@ void X264EncoderImpl::upgradeBitrateLevel() {
   pParameter->rc.f_rf_constant--;
   current_f_rf_constant = pParameter->rc.f_rf_constant;
 
-  x264_encoder_reconfig(X264EncoderImplHandle, pParameter);
+  x264_encoder_reconfig(encoderHandler_, pParameter);
 }
 
 void X264EncoderImpl::setLeastBitrateLevel() {
     pParameter->rc.f_rf_constant = 32;
     current_f_rf_constant = pParameter->rc.f_rf_constant;
 
-    x264_encoder_reconfig(X264EncoderImplHandle, pParameter);
+    x264_encoder_reconfig(encoderHandler_, pParameter);
 }
 
 void X264EncoderImpl::declineBitrateLevel() {
@@ -270,77 +192,41 @@ void X264EncoderImpl::declineBitrateLevel() {
   pParameter->rc.f_rf_constant++;
   current_f_rf_constant = pParameter->rc.f_rf_constant;
 
-  x264_encoder_reconfig(X264EncoderImplHandle, pParameter);
+  x264_encoder_reconfig(encoderHandler_, pParameter);
 }
 
-long X264EncoderImpl::X264EncoderImplProcess(x264_picture_t *pPicture, x264_nal_t **nals, int& nalsCount) {
-  pPicture->i_pts = (int64_t)(frameNo * pParameter->i_fps_den);
-  pPicture->i_type = X264_TYPE_AUTO;
-  pPicture->i_qpplus1 = 0;//X264_QP_AUTO;
-
-  if (isForceIDRFrameEnabled) {
-      pPicture->i_type = X264_TYPE_IDR;
-      isForceIDRFrameEnabled = false;
+int32_t X264EncoderImpl::Encode(const uint8_t* frame, long long ts, bool force_key) {
+  x264_picture_t inPicture, outPicture;
+  inPicture.img.plane[0] = const_cast<uint8_t*>(frame);
+  inPicture.img.plane[1] = const_cast<uint8_t*>(frame + codecSetting_.width * codecSetting_.height);
+  inPicture.img.plane[2] = const_cast<uint8_t*>(inPicture.img.plane[1] + codecSetting_.width * codecSetting_.height / 4);;
+  inPicture.i_pts = (int64_t)(frameNo * pParameter->i_fps_den);
+  inPicture.i_type = X264_TYPE_AUTO;
+  inPicture.i_qpplus1 = X264_QP_AUTO;
+  if (force_key) {
+    inPicture.i_type = X264_TYPE_IDR;
   }
 
+  x264_nal_t *nals = NULL;
+  int nalsCount = 0;
   int32_t framesize = -1;
+  framesize = x264_encoder_encode(encoderHandler_, &nals, &nalsCount, &inPicture, &outPicture);
 
-
-  framesize = x264_encoder_encode(X264EncoderImplHandle, nals, &nalsCount, pPicture, pOutput);
-  if (framesize>0) {
-      frameNo++;
+  if (framesize > 0) {
+    frameNo++;
   }
-
   return framesize;
 }
 
-/*
- long X264EncoderImpl::X264EncoderImplProcess(uint8_t *pSrcData, int srcDataSize, x264_nal_t **nals, int& nalsCount) {
-
- pPicture->img.plane[0] = pSrcData;
- pPicture->img.plane[1] = pSrcData + srcDataSize*2/3;
- pPicture->img.plane[2] = pSrcData + srcDataSize*2/3 + srcDataSize/6;
- pPicture->i_pts = (int64_t)(frameNo * pParameter->i_fps_den);
- pPicture->i_type = X264_TYPE_AUTO;
- pPicture->i_qpplus1 = X264_QP_AUTO;
-
- if (isForceIDRFrameEnabled) {
- pPicture->i_type = X264_TYPE_IDR;
- isForceIDRFrameEnabled = false;
- }
-
- int32_t framesize = -1;
-
-
- framesize = x264_encoder_encode(X264EncoderImplHandle, nals, &nalsCount, pPicture, pOutput);
-
- if (framesize>0) {
- frameNo++;
- }
-
- return framesize;
- }
- */
-
-bool X264EncoderImpl::closeX264EncoderImpl() {
-  if (pOutput) {
-      free(pOutput);
-      pOutput = NULL;
-  }
-  /*
-  if (pPicture) {
-  free(pPicture);
-  pPicture = NULL;
-  }
-  */
+int32_t X264EncoderImpl::Release() {
   if (pParameter) {
       free(pParameter);
       pParameter = NULL;
   }
 
-  if (X264EncoderImplHandle) {
-      x264_encoder_close(X264EncoderImplHandle);
-      X264EncoderImplHandle = NULL;
+  if (encoderHandler_) {
+      x264_encoder_close(encoderHandler_);
+      encoderHandler_ = NULL;
   }
-  return true;
+  return 0;
 }

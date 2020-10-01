@@ -1,10 +1,10 @@
-#ifndef x264encoder_h
-#define x264encoder_h
+#ifndef X264_ENCODER_IMPL_H
+#define X264_ENCODER_IMPL_H
 
-#include "stdint.h"
+#include "encoder_base.h"
 extern "C"
 {
-  #include "x264.h"
+#include "x264.h"
 }
 
 enum bitrate_level
@@ -15,51 +15,36 @@ enum bitrate_level
   LOW_LEVEL = 3,
 };
 
-class X264EncoderImpl
+class X264EncoderImpl : public EncoderBase
 {
 public:
   X264EncoderImpl();
   ~X264EncoderImpl();
 
-  bool openX264Encoder();
-  long x264EncoderProcess(x264_picture_t *pPicture, x264_nal_t **nals, int& nalsCount);
-  bool closeX264Encoder();
+  // implements EncoderBase
+  virtual int32_t InitEncode(CodecSetting& setting);
+  virtual void    RegisterCallback(EncodeCallback * callback) { callback_ = callback; }
+  virtual int32_t Encode(const uint8_t* frame, long long ts, bool force_key);
+  virtual int32_t Release();
 
-  void setSourceFormat(unsigned int sourcformat);
-  void setResolution(unsigned int w, unsigned int h);
   void setBitrate(unsigned int i_bitrate);
-  void setFps(unsigned int fps);
-  void setI_KeyInt_Max(unsigned int i_frame_max);
-  void setQp_Max(unsigned int qp_max);
-  void setQp_Min(unsigned int qp_min);
-
-  void forceIDRFrame();
 
   void upgradeBitrateLevel();
   void declineBitrateLevel();
   void setLeastBitrateLevel();
 
 private:
-
+  CodecSetting codecSetting_;
   x264_param_t *pParameter;
-  x264_t *x264EncoderHandle;
-  x264_picture_t *pOutput;
+  x264_t *encoderHandler_;
+  EncodeCallback *callback_;
 
   unsigned int sourceFormat;
   unsigned int bitratelevel;
-  unsigned int i_fps;
-  unsigned int i_keyint_max;
-  unsigned int width;
-  unsigned int height;
-  unsigned int qp_max;
-  unsigned int qp_min;
-
   unsigned int current_f_rf_constant;
   unsigned int userSetting_f_rf_constant;
 
   int64_t frameNo;
-
-  bool isForceIDRFrameEnabled;
 };
 
 #endif
@@ -68,15 +53,6 @@ private:
 
 /*
 X264Encoder x264Encoder;
-
-x264Encoder.setBitrate(512);
-x264Encoder.setResolution(640,480);
-x264Encoder.setFps(20);
-
-FILE *inputFile = NULL;
-FILE *outputFile = NULL;
-inputFile = fopen("yuv_640x480.yuv","rb");
-outputFile = fopen("h264_640x480.h264","wb");
 
 x264_picture_t inputPicture;
 x264_picture_alloc(&inputPicture, X264_CSP_I420, 640, 480);
@@ -104,9 +80,6 @@ if(x264Encoder.openX264Encoder())
     }
 
 }
-
-fclose(inputFile);
-fclose(outputFile);
 
 x264_picture_clean(&inputPicture);
 
