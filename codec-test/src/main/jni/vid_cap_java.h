@@ -5,6 +5,7 @@
 #include <os_mutex.h>
 #include "h264_encoder_impl.h"
 #include "sdk_codec_impl.h"
+#include "x264_encoder_impl.h"
 
 int32_t InitCaptureJavaRes(bool init);
 
@@ -23,7 +24,8 @@ private:
 
   jobject _jcapturer;// Global ref to Java VideoCaptureAndroid object.
   bool _inited;
-  H264EncoderImpl encoder;
+  H264EncoderImpl open264Encoder;
+  X264EncoderImpl x264Encoder;
   SdkCodecImpl* sdkEncoder;
   os::Mutex *_apiCs;
 };

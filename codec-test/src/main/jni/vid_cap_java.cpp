@@ -76,7 +76,6 @@ static int32_t jstring2chars(JNIEnv *env, jstring  jstr, char *szBuf, int32_t si
 }
 
 int32_t InitCaptureJavaRes(bool init) {
-  logd("init srwDebug");
   if (init) {
     AttachThreadScoped ats(kvidshare::VidShared::GetJvm());
     JNIEnv *env = ats.env();
@@ -173,7 +172,9 @@ int32_t VidCaptureJava::Init(uint32_t dev_idx, void *surface) {
   settings.bitrate = 2000 * 1000;
   settings.keyinterval = 70;
   settings.framerate= 25;
-  encoder.InitEncode(settings);
+  logi("vid java init");
+  //open264Encoder.InitEncode(settings);
+  x264Encoder.InitEncode(settings);
   if (USE_SDK_CODEC) {
     sdkEncoder = new SdkCodecImpl();
     sdkEncoder->InitEncode(settings);
@@ -189,7 +190,8 @@ int32_t VidCaptureJava::DeInit() {
   AttachThreadScoped ats(kvidshare::VidShared::GetJvm());
   ats.env()->DeleteGlobalRef(_jcapturer);
   _inited = false;
-  encoder.Release();
+  //open264Encoder.Release();
+  x264Encoder.Release();
   if (USE_SDK_CODEC) {
     sdkEncoder->Release();
     delete sdkEncoder;
@@ -213,7 +215,8 @@ int32_t VidCaptureJava::OnIncomingFrame(
   //_video_cb->onIncomingFrame(vplane, info, _video_cb_ctx);
   //if (counter++ % 100 == 0)
 
-  encoder.Encode(frame, ts, false);
+  //open264Encoder.Encode(frame, ts, false);
+  x264Encoder.Encode(frame, ts, false);
   if (USE_SDK_CODEC) {
     sdkEncoder->Encode(frame, ts, false);
   }

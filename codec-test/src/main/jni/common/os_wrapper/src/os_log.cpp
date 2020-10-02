@@ -21,7 +21,7 @@ extern "C" {
 
 #define LOG_BUFFER_SIZE  (4096)
 
-static int32_t gs_log_level = eLogDebug;
+static int32_t gs_log_level = eLogInfo;
 static pLogTraceFun  gs_redirect_trace = NULL;
 
 int32_t log_setlevel(int32_t level) {

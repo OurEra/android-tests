@@ -1,3 +1,4 @@
+#define LOGTAG "CODEC-jni"
 #include <jni.h>
 #include <os_log.h>
 #include <shared_resource.h>

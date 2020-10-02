@@ -86,32 +86,6 @@ typedef enum {
   cmUnsupportedData
 } CM_RETURN;
 
-/**
-* @brief Enumulate the nal unit type
-*/
-enum ENalUnitType {
-  NAL_UNKNOWN     = 0,
-  NAL_SLICE       = 1,
-  NAL_SLICE_DPA   = 2,
-  NAL_SLICE_DPB   = 3,
-  NAL_SLICE_DPC   = 4,
-  NAL_SLICE_IDR   = 5,      ///< ref_idc != 0
-  NAL_SEI         = 6,      ///< ref_idc == 0
-  NAL_SPS         = 7,
-  NAL_PPS         = 8
-                    ///< ref_idc == 0 for 6,9,10,11,12
-};
-
-/**
-* @brief NRI: eNalRefIdc
-*/
-enum ENalPriority {
-  NAL_PRIORITY_DISPOSABLE = 0,
-  NAL_PRIORITY_LOW        = 1,
-  NAL_PRIORITY_HIGH       = 2,
-  NAL_PRIORITY_HIGHEST    = 3
-};
-
 #define IS_PARAMETER_SET_NAL(eNalRefIdc, eNalType) \
 ( (eNalRefIdc == NAL_PRIORITY_HIGHEST) && (eNalType == (NAL_SPS|NAL_PPS) || eNalType == NAL_SPS) )
 

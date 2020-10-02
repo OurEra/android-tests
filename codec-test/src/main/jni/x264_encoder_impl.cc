@@ -1,6 +1,13 @@
+#define LOGTAG "CODEC-x264-codec"
+
 #include <stdlib.h>
 #include <string.h>
 #include "x264_encoder_impl.h"
+#include <os_log.h>
+
+void x264_log_redirect( void *p_unused, int i_level, const char *psz_fmt, va_list arg) {
+  log_info(LOGTAG, psz_fmt, arg);
+}
 
 X264EncoderImpl::X264EncoderImpl() {
   bitratelevel = STANDARD_LEVEL;
@@ -56,7 +63,7 @@ int32_t X264EncoderImpl::InitEncode(CodecSetting& setting) {
 
   pParameter->b_deterministic = 1;
   //pParameter->b_sliced_threads = 1;
-  pParameter->i_threads = 1;
+  //pParameter->i_threads = 1;
 
   pParameter->i_csp = X264_CSP_I420;
 
@@ -107,22 +114,22 @@ int32_t X264EncoderImpl::InitEncode(CodecSetting& setting) {
   pParameter->i_deblocking_filter_beta = 4;
 
   pParameter->rc.b_mb_tree = 0;
-
-  pParameter->i_log_level = X264_LOG_NONE;
+  pParameter->i_log_level = X264_LOG_INFO;
 
   if(x264_param_apply_profile(pParameter, "baseline")) {
     Release();
     return false;
   }
+  pParameter->pf_log = x264_log_redirect;
 
   if (!encoderHandler_) {
     encoderHandler_ = x264_encoder_open(pParameter);
-
     if (!encoderHandler_) {
       Release();
       return -1;
     }
   }
+  logi("open x264 handler %p", encoderHandler_);
   return 0;
 }
 
@@ -197,10 +204,17 @@ void X264EncoderImpl::declineBitrateLevel() {
 
 int32_t X264EncoderImpl::Encode(const uint8_t* frame, long long ts, bool force_key) {
   x264_picture_t inPicture, outPicture;
+  inPicture = {0};
+  outPicture = {0};
+  inPicture.img.i_csp = X264_CSP_I420;
+  inPicture.img.i_plane = 3;
+  inPicture.img.i_stride[0] = codecSetting_.width;
+  inPicture.img.i_stride[1] = codecSetting_.width / 2;
+  inPicture.img.i_stride[2] = codecSetting_.width / 2;
   inPicture.img.plane[0] = const_cast<uint8_t*>(frame);
   inPicture.img.plane[1] = const_cast<uint8_t*>(frame + codecSetting_.width * codecSetting_.height);
   inPicture.img.plane[2] = const_cast<uint8_t*>(inPicture.img.plane[1] + codecSetting_.width * codecSetting_.height / 4);;
-  inPicture.i_pts = (int64_t)(frameNo * pParameter->i_fps_den);
+  inPicture.i_pts = ts;
   inPicture.i_type = X264_TYPE_AUTO;
   inPicture.i_qpplus1 = X264_QP_AUTO;
   if (force_key) {
@@ -215,6 +229,7 @@ int32_t X264EncoderImpl::Encode(const uint8_t* frame, long long ts, bool force_k
   if (framesize > 0) {
     frameNo++;
   }
+  logi("x264 encoded size %d nalu %d handler %p res %dx%d", framesize, nalsCount, encoderHandler_, codecSetting_.width, codecSetting_.height);
   return framesize;
 }
 
