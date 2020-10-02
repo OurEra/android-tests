@@ -9,7 +9,7 @@
 
 int32_t InitCaptureJavaRes(bool init);
 
-class VidCaptureJava {
+class VidCaptureJava : public EncodeCallback {
 public:
   VidCaptureJava();
   virtual ~VidCaptureJava();
@@ -20,6 +20,9 @@ public:
   int32_t OnIncomingFrame(uint8_t *frame, int32_t size, int64_t ts);
 
   static void cacheJavaRes(JNIEnv* env);
+
+  // implements EncodeCallback
+  virtual void onEncoded(EncodedImage& image);
 private:
 
   jobject _jcapturer;// Global ref to Java VideoCaptureAndroid object.
@@ -28,6 +31,7 @@ private:
   X264EncoderImpl x264Encoder;
   SdkCodecImpl* sdkEncoder;
   os::Mutex *_apiCs;
+  FILE* dump_fd_ = NULL;
 };
 
 #endif

@@ -35,7 +35,6 @@ class H264EncoderImpl : public EncoderBase {
 
   int32_t number_of_cores_;
 
-  FILE* dump_fd_;
   EncodeCallback *callback_;
   EncodedImage encoded_image_;
   EncodedStats stats_;

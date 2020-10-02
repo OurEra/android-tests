@@ -11,7 +11,6 @@ void x264_log_redirect( void *p_unused, int i_level, const char *psz_fmt, va_lis
 
 X264EncoderImpl::X264EncoderImpl() {
   bitratelevel = STANDARD_LEVEL;
-  frameNo = 0;
   pParameter = NULL;
   encoderHandler_ = NULL;
 }
@@ -225,11 +224,16 @@ int32_t X264EncoderImpl::Encode(const uint8_t* frame, long long ts, bool force_k
   int nalsCount = 0;
   int32_t framesize = -1;
   framesize = x264_encoder_encode(encoderHandler_, &nals, &nalsCount, &inPicture, &outPicture);
-
-  if (framesize > 0) {
-    frameNo++;
+  // Deliver encoded image.
+  if (callback_) {
+    EncodedImage image;
+    image.buffer = nals[0].p_payload;
+    image.length = framesize;
+    image.size = framesize;
+    callback_->onEncoded(image);
   }
-  logi("x264 encoded size %d nalu %d handler %p res %dx%d", framesize, nalsCount, encoderHandler_, codecSetting_.width, codecSetting_.height);
+
+  logi("x264 encoded size %d nalu %d", framesize, nalsCount);
   return framesize;
 }
 

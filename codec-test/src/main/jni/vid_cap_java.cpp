@@ -166,6 +166,15 @@ int32_t VidCaptureJava::Init(uint32_t dev_idx, void *surface) {
   CHECK(_jcapturer);
   _inited = true;
 
+  char szName[1024] = {0};
+  sprintf(szName, "/sdcard/codectest.%s", "h264");
+  dump_fd_ = fopen(szName, "w+");
+  if (!dump_fd_)
+    loge("open %s failed %s", szName, strerror(errno));
+  else
+    loge("open %s ok", szName);
+
+
   CodecSetting settings;
   settings.width = 1280;
   settings.height = 720;
@@ -175,11 +184,20 @@ int32_t VidCaptureJava::Init(uint32_t dev_idx, void *surface) {
   logi("vid java init");
   //open264Encoder.InitEncode(settings);
   x264Encoder.InitEncode(settings);
+  x264Encoder.RegisterCallback(this);
   if (USE_SDK_CODEC) {
     sdkEncoder = new SdkCodecImpl();
     sdkEncoder->InitEncode(settings);
   }
   return 0;
+}
+
+
+void VidCaptureJava::onEncoded(EncodedImage& image) {
+  if (dump_fd_) {
+    fwrite(image.buffer, image.length, 1, dump_fd_);
+    fflush(dump_fd_);
+  }
 }
 
 int32_t VidCaptureJava::DeInit() {
@@ -196,6 +214,10 @@ int32_t VidCaptureJava::DeInit() {
     sdkEncoder->Release();
     delete sdkEncoder;
   }
+  if (dump_fd_) {
+    fclose(dump_fd_);
+  }
+
   return 0;
 }
 

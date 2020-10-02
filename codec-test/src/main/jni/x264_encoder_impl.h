@@ -43,45 +43,6 @@ private:
   unsigned int bitratelevel;
   unsigned int current_f_rf_constant;
   unsigned int userSetting_f_rf_constant;
-
-  int64_t frameNo;
 };
 
 #endif
-
-
-
-/*
-X264Encoder x264Encoder;
-
-x264_picture_t inputPicture;
-x264_picture_alloc(&inputPicture, X264_CSP_I420, 640, 480);
-
-x264_nal_t *p_nals = NULL;
-int nalsCount = 0;
-
-if(x264Encoder.openX264Encoder())
-{
-    for(int j=0; j<20; j++)
-    {
-        fread(inputPicture.img.plane[0],1,640*480, inputFile);
-        fread(inputPicture.img.plane[1],1,640*480/4, inputFile);
-        fread(inputPicture.img.plane[2],1,640*480/4, inputFile);
-
-        x264Encoder.x264EncoderProcess(&inputPicture,&p_nals,nalsCount);
-
-        if(p_nals)
-        {
-            for(int i=0; i<nalsCount; i++)
-            {
-                fwrite(p_nals[i].p_payload, p_nals[i].i_payload, 1, outputFile);
-            }
-        }
-    }
-
-}
-
-x264_picture_clean(&inputPicture);
-
-x264Encoder.closeX264Encoder();
-*/

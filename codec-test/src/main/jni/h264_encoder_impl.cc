@@ -79,8 +79,7 @@ H264EncoderImpl::H264EncoderImpl()
       max_bps_(0),
       frame_dropping_on_(false),
       key_frame_interval_(0),
-      number_of_cores_(0),
-      dump_fd_(NULL) {
+      number_of_cores_(0) {
 }
 
 H264EncoderImpl::~H264EncoderImpl() {
@@ -110,14 +109,6 @@ int32_t H264EncoderImpl::InitEncode(CodecSetting& setting) {
                                  &trace_level);
   }
   // else WELS_LOG_DEFAULT is used by default.
-
-  char szName[1024] = {0};
-  sprintf(szName, "/storage/emulated/0/qiniutest.%s", "h264");
-  dump_fd_ = fopen(szName, "w+");
-  if (!dump_fd_)
-    loge("open %s failed %s", szName, strerror(errno));
-  else
-    loge("open %s ok", szName);
 
   number_of_cores_ = 1;
   // Set internal settings from codec_settings
@@ -169,8 +160,6 @@ int32_t H264EncoderImpl::Release() {
   }
   encoded_image_.buffer = NULL;
   encoded_image_buffer_.reset();
-  if (dump_fd_)
-    fclose(dump_fd_);
   return 0;
 }
 
@@ -227,11 +216,6 @@ int32_t H264EncoderImpl::Encode(const uint8_t* input_frame,
     if (callback_) {
       callback_->onEncoded(encoded_image_);
     }
-    if (dump_fd_) {
-      fwrite(encoded_image_.buffer, encoded_image_.length, 1, dump_fd_);
-      fflush(dump_fd_);
-    }
-
   }
   return 0;
 }
