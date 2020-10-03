@@ -4,7 +4,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.SurfaceView;
 
-public class TestActivity extends AppCompatActivity {
+public class CodecTestActivity extends AppCompatActivity {
 
     private static boolean mIsIint = false;
 

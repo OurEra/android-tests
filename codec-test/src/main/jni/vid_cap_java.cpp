@@ -182,7 +182,8 @@ int32_t VidCaptureJava::Init(uint32_t dev_idx, void *surface) {
   settings.keyinterval = 70;
   settings.framerate= 25;
   logi("vid java init");
-  //open264Encoder.InitEncode(settings);
+  open264Encoder.InitEncode(settings);
+  open264Encoder.RegisterCallback(this);
   x264Encoder.InitEncode(settings);
   x264Encoder.RegisterCallback(this);
   if (USE_SDK_CODEC) {
@@ -208,7 +209,7 @@ int32_t VidCaptureJava::DeInit() {
   AttachThreadScoped ats(kvidshare::VidShared::GetJvm());
   ats.env()->DeleteGlobalRef(_jcapturer);
   _inited = false;
-  //open264Encoder.Release();
+  open264Encoder.Release();
   x264Encoder.Release();
   if (USE_SDK_CODEC) {
     sdkEncoder->Release();
@@ -237,8 +238,11 @@ int32_t VidCaptureJava::OnIncomingFrame(
   //_video_cb->onIncomingFrame(vplane, info, _video_cb_ctx);
   //if (counter++ % 100 == 0)
 
-  //open264Encoder.Encode(frame, ts, false);
-  x264Encoder.Encode(frame, ts, false);
+  if (counter++ < 50) {
+    open264Encoder.Encode(frame, ts, false);
+  } else {
+    x264Encoder.Encode(frame, ts, false);
+  }
   if (USE_SDK_CODEC) {
     sdkEncoder->Encode(frame, ts, false);
   }
