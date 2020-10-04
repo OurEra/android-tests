@@ -1,7 +1,7 @@
 package com.srw.opengl_test.activity;
 
 import android.graphics.Bitmap;
-import android.graphics.Color;
+import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
@@ -10,35 +10,37 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.ImageView;
 
 import com.srw.opengl_test.EGLBase;
 import com.srw.opengl_test.EGLDrawer;
+import com.srw.opengl_test.EGLFrameBuffer;
 import com.srw.opengl_test.EGLUtil;
 import com.srw.opengl_test.R;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.nio.ByteBuffer;
 
-public class GLDrawSurfaceViewActivity extends AppCompatActivity {
+public class GLDrawFrameBufferActivity extends AppCompatActivity {
 
-  private static final String TAG = "GLTEST-" + GLDrawSurfaceViewActivity.class.getSimpleName();
+  private static final String TAG = "GLTEST-" + GLDrawFrameBufferActivity.class.getSimpleName();
 
   private Handler mWorkHandler;
   private EGLDrawer mDrawer;
   private EGLBase mEGLBase;
+  private EGLFrameBuffer mFrameBuffer;
   private int mTexture;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.draw_surfaceview);
+    setContentView(R.layout.draw_framebuffer);
 
     HandlerThread openglWorkThread = new HandlerThread("opengl worker");
     openglWorkThread.start();
     mWorkHandler = new Handler(openglWorkThread.getLooper());
     mWorkHandler.post(() -> {
-        mEGLBase = new EGLBase(EGLBase.CONFIG_PLAIN);
-        mDrawer = new EGLDrawer();
+      mEGLBase = new EGLBase(EGLBase.CONFIG_PLAIN);
+      mDrawer = new EGLDrawer();
     });
 
     ((SurfaceView)findViewById(R.id.renderview)).getHolder().addCallback(new SurfaceHolder.Callback() {
@@ -48,6 +50,7 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
             mEGLBase.createEGLSurface(holder.getSurface());
             mEGLBase.makeCurrent();
 
+            mFrameBuffer = new EGLFrameBuffer(1200, 800);
             mTexture = EGLUtil.generateTexture();
             Log.i(TAG, "handle " + mTexture);
         });
@@ -70,30 +73,34 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
   private class DrawOperation implements Runnable {
     @Override
     public void run() {
-      if (mEGLBase != null) {
-        // just draw date
-        String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
-        Date date = new Date(System.currentTimeMillis());
-        SimpleDateFormat sf = new SimpleDateFormat(DATE_PATTERN);
-        Bitmap bitmap = EGLUtil.createBitmapWithString(800, 800, sf.format(date));
-        EGLUtil.uploadBitmapToTexture(mTexture, bitmap);
+      Bitmap pic = BitmapFactory.decodeResource(GLDrawFrameBufferActivity.this.getResources(),
+              R.mipmap.pic1);
+      EGLUtil.uploadBitmapToTexture(mTexture, pic);
 
-        // darw buffer starting at top-left corner, not bottom-left.
-        final android.graphics.Matrix renderMatrix = new android.graphics.Matrix();
-        renderMatrix.preTranslate(0.5f, 0.5f);
-        renderMatrix.preScale(1f, -1f);
-        renderMatrix.preTranslate(-0.5f, -0.5f);
-        mDrawer.drawTexture(mTexture, 800, 800, EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
-        mEGLBase.swapBuffers();
-      }
-      mWorkHandler.postDelayed(this, 100);
+      GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameBuffer.getFrameBuffer());
+
+      // darw buffer starting at top-left corner, not bottom-left.
+      final android.graphics.Matrix renderMatrix = new android.graphics.Matrix();
+      renderMatrix.preTranslate(0.5f, 0.5f);
+      renderMatrix.preScale(1f, 1f);
+      renderMatrix.preTranslate(-0.5f, -0.5f);
+      mDrawer.drawTexture(mTexture, 1200, 800, EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
+
+      // readout what gl draw
+      final ByteBuffer rgbaData = ByteBuffer.allocateDirect(mFrameBuffer.getWidth() * mFrameBuffer.getHeight() * 4);
+      GLES20.glReadPixels(0, 0, mFrameBuffer.getWidth(), mFrameBuffer.getHeight(),
+              GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, rgbaData);
+      EGLUtil.checkGlError("readPixel");
+
+      GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+      runOnUiThread(() -> {
+        final Bitmap output = Bitmap.createBitmap(mFrameBuffer.getWidth(), mFrameBuffer.getHeight(), Bitmap.Config.ARGB_8888);
+        output.copyPixelsFromBuffer(rgbaData);
+        ((ImageView)findViewById(R.id.framebuffer_iv)).setImageBitmap(output);
+      });
     }
   }
 
-  @Override
-  protected void onResume() {
-    super.onResume();
-  }
 
   @Override
   protected void onDestroy() {
@@ -101,6 +108,7 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
     mWorkHandler.postAtFrontOfQueue(() -> {
       mDrawer.release();
       GLES20.glDeleteTextures(1, new int[] {mTexture}, 0);
+      mFrameBuffer.release();
       mEGLBase.release();
     });
     mWorkHandler.post(() -> {
@@ -108,4 +116,6 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
       mWorkHandler.getLooper().quit();
     });
   }
+
 }
+

@@ -2,11 +2,10 @@ package com.srw.opengl_test.activity;
 
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
-import com.srw.opengl_test.EGLDrawer;
 import com.srw.opengl_test.R;
 
 import java.nio.ByteBuffer;
@@ -21,7 +20,6 @@ public class GLDrawGLSurfaceViewActivity extends AppCompatActivity {
     private static final String TAG = "GLTEST-" + GLDrawGLSurfaceViewActivity.class.getSimpleName();
 
     GLSurfaceView mRenderView;
-    EGLDrawer mDrawer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +59,7 @@ public class GLDrawGLSurfaceViewActivity extends AppCompatActivity {
 	            0.5f, -0.5f,  // bottom right
 	    };
 
-	    float color[] = { 1.0f, 0f, 0f, 1.0f };
+	    float color[] = { 0.0f, 0.5f, 0.5f, 1.0f };
 
 	    private int mPositionHandle;
 	    private int mColorHandle;

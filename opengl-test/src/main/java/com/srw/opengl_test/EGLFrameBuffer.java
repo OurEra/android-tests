@@ -1,13 +1,16 @@
 package com.srw.opengl_test;
 
 import android.opengl.GLES20;
+import android.util.Log;
 
 public class EGLFrameBuffer {
 
-  int mTexture;
-  int mFrameBuffer;
-  int mWidth;
-  int mHeight;
+  private static final String TAG = "GLTEST-" + EGLFrameBuffer.class.getSimpleName();
+
+  private int mTexture;
+  private int mFrameBuffer;
+  private int mWidth;
+  private int mHeight;
 
   public EGLFrameBuffer(int width, int height) {
 
@@ -17,8 +20,10 @@ public class EGLFrameBuffer {
     final int[] framebuffer = new int[1];
     GLES20.glGenFramebuffers(1, framebuffer, 0);
     mFrameBuffer = framebuffer[0];
+    Log.i(TAG, "framebuffer " + mFrameBuffer);
 
     mTexture = EGLUtil.generateTexture();
+    Log.i(TAG, "texture " + mTexture);
 
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexture);
@@ -68,7 +73,7 @@ public class EGLFrameBuffer {
     this.mHeight = mHeight;
   }
 
-  public void Release() {
+  public void release() {
     GLES20.glDeleteTextures(1, new int[] {mTexture}, 0);
     mTexture = 0;
     GLES20.glDeleteFramebuffers(1, new int[] {mFrameBuffer}, 0);

@@ -49,17 +49,17 @@ public class EGLBase {
 		Log.i(TAG, "EGLSurface " + mSurface);
 	}
 
-    public void createEGLSurface(Surface surface) {
-        if (mSurface != EGL14.EGL_NO_SURFACE) {
-            throw new RuntimeException("Already have EGLSurface");
-        }
-        if (surface == null) {
-            throw new RuntimeException("Invalid texutre instance");
-        }
-        int[] surfaceAttribs = {EGL14.EGL_NONE};
-        mSurface = EGL14.eglCreateWindowSurface(mDisplay, mConfig, surface, surfaceAttribs, 0);
-        Log.i(TAG, "EGLSurface " + mSurface);
+  public void createEGLSurface(Surface surface) {
+    if (mSurface != EGL14.EGL_NO_SURFACE) {
+      throw new RuntimeException("Already have EGLSurface");
     }
+    if (surface == null) {
+      throw new RuntimeException("Invalid texutre instance");
+    }
+    int[] surfaceAttribs = {EGL14.EGL_NONE};
+    mSurface = EGL14.eglCreateWindowSurface(mDisplay, mConfig, surface, surfaceAttribs, 0);
+    Log.i(TAG, "EGLSurface " + mSurface);
+  }
 
 	public void makeCurrent() {
 		if (mSurface == EGL14.EGL_NO_SURFACE) {

@@ -9,13 +9,11 @@ import android.graphics.PorterDuffXfermode;
 import android.opengl.GLES20;
 import android.util.Log;
 
-import com.srw.utils.BitmapOperations;
+import com.srw.utils.FileOperations;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class EGLUtil {
 
@@ -98,35 +96,17 @@ public class EGLUtil {
     return textureHandle;
   }
 
-  public static void uploadBitmapToTexture(int texture, int width, int height) {
-    Bitmap b = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-    Paint paint = new Paint();
-    Canvas c = new Canvas(b);
-    c.drawRect(0, 0, width, height, paint);
-    c.drawColor(Color.WHITE);
-
-    paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-    paint.setTextSize(40);
-    paint.setTextScaleX(1.f);
-    paint.setAlpha(0);
-    paint.setAntiAlias(true);
-    paint.setColor(Color.RED);
-    // just draw date
-    String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
-    Date date = new Date(System.currentTimeMillis());
-    SimpleDateFormat sf = new SimpleDateFormat(DATE_PATTERN);
-    c.drawText(sf.format(date), 200, 200, paint);
+  public static void uploadBitmapToTexture(int texture, Bitmap bitmap) {
+    //FileOperations.saveBitmapToFile(bitmap, "/sdcard/test_gl.png");
 
     // read to byte buffer
-    int length = b.getWidth() * b.getHeight() * 4;
+    int length = bitmap.getWidth() * bitmap.getHeight() * 4;
 
     ByteBuffer pixels = ByteBuffer.allocateDirect(length);
     pixels.order(ByteOrder.LITTLE_ENDIAN);
 
-    b.copyPixelsToBuffer(pixels);
+    bitmap.copyPixelsToBuffer(pixels);
     pixels.position(0);
-
-    //BitmapOperations.saveBitmapToFile(b, "/sdcard/test_gl.png");
 
     // upload to texture
     // Bind the texture handle to the 2D texture target.
@@ -134,7 +114,24 @@ public class EGLUtil {
 
     // Load the data from the buffer into the texture handle.
     GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, /*level*/ 0, GLES20.GL_RGBA,
-            width, height, /*border*/ 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, pixels);
+            bitmap.getWidth(), bitmap.getHeight(), /*border*/ 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, pixels);
     EGLUtil.checkGlError("loadImageTexture");
+  }
+
+  public static Bitmap createBitmapWithString(int width, int height, String content) {
+    Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+    Paint paint = new Paint();
+    Canvas canvas = new Canvas(bitmap);
+    canvas.drawRect(0, 0, width, height, paint);
+    canvas.drawColor(Color.WHITE);
+
+    paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
+    paint.setTextSize(40);
+    paint.setTextScaleX(1.f);
+    paint.setAlpha(0);
+    paint.setAntiAlias(true);
+    paint.setColor(0xFF008080);
+    canvas.drawText(content, 200, 200, paint);
+    return bitmap;
   }
 }

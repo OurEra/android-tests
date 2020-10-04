@@ -1,6 +1,9 @@
 package com.srw.utils;
 
 import android.graphics.Bitmap;
+import android.util.Log;
+
+import com.srw.opengl_test.EGLDrawer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -8,7 +11,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class BitmapOperations {
+public class FileOperations {
+
+    private static final String TAG = "GLTEST-" + FileOperations.class.getSimpleName();
 
     public static void saveBitmapToFile(Bitmap bitmap, String path) {
 
@@ -22,10 +27,10 @@ public class BitmapOperations {
                 fos.flush();
                 fos.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.e(TAG, "err: " + e.getMessage());
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            Log.e(TAG, "err: " + e.getMessage());
         }
     }
 }

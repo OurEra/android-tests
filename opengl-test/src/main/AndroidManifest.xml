@@ -18,8 +18,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activity.GLDrawGLSurfaceViewActivity"></activity>
+        <activity android:name=".activity.GLDrawGLSurfaceViewActivity">
+        </activity>
         <activity android:name=".activity.GLDrawSurfaceViewActivity">
+        </activity>
+        <activity android:name=".activity.GLDrawFrameBufferActivity">
         </activity>
     </application>
 
