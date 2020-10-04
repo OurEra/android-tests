@@ -15,85 +15,85 @@ import com.srw.opengl_test.R;
 
 public class GLDrawSurfaceViewActivity extends AppCompatActivity {
 
-    private static final String TAG = "GLTEST-" + GLDrawSurfaceViewActivity.class.getSimpleName();
+  private static final String TAG = "GLTEST-" + GLDrawSurfaceViewActivity.class.getSimpleName();
 
-    private Handler mWorkHandler;
-    private EGLDrawer mDrawer;
-    private EGLBase mEGLBase;
-    private int mTexture;
+  private Handler mWorkHandler;
+  private EGLDrawer mDrawer;
+  private EGLBase mEGLBase;
+  private int mTexture;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.draw_surfaceview);
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.draw_surfaceview);
 
-        HandlerThread openglWorkThread = new HandlerThread("opengl worker");
-        openglWorkThread.start();
-        mWorkHandler = new Handler(openglWorkThread.getLooper());
+    HandlerThread openglWorkThread = new HandlerThread("opengl worker");
+    openglWorkThread.start();
+    mWorkHandler = new Handler(openglWorkThread.getLooper());
+    mWorkHandler.post(() -> {
+        mEGLBase = new EGLBase(EGLBase.CONFIG_PLAIN);
+        mDrawer = new EGLDrawer();
+    });
+
+    ((SurfaceView)findViewById(R.id.renderview)).getHolder().addCallback(new SurfaceHolder.Callback() {
+      @Override
+      public void surfaceCreated(SurfaceHolder holder) {
         mWorkHandler.post(() -> {
-            mEGLBase = new EGLBase(EGLBase.CONFIG_PLAIN);
-            mDrawer = new EGLDrawer();
+            mEGLBase.createEGLSurface(holder.getSurface());
+            mEGLBase.makeCurrent();
+
+            mTexture = EGLUtil.generateTexture();
+            Log.i(TAG, "handle " + mTexture);
         });
+      }
 
-        ((SurfaceView)findViewById(R.id.renderview)).getHolder().addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(SurfaceHolder holder) {
-                mWorkHandler.post(() -> {
-                    mEGLBase.createEGLSurface(holder.getSurface());
-                    mEGLBase.makeCurrent();
+      @Override
+      public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 
-                    mTexture = EGLUtil.generateTexture();
-                    Log.i(TAG, "handle " + mTexture);
-                });
-            }
+      }
 
-            @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+      @Override
+      public void surfaceDestroyed(SurfaceHolder holder) {
 
-            }
+      }
+    });
 
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
+    mWorkHandler.postDelayed(new DrawOperation(), 1000);
+  }
 
-            }
-        });
-
-        mWorkHandler.postDelayed(new DrawOperation(), 1000);
-    }
-
-    private class DrawOperation implements Runnable {
-        @Override
-        public void run() {
-            if (mEGLBase != null) {
-                EGLUtil.uploadBitmapToTexture(mTexture, 800, 800);
-
-                // darw buffer starting at top-left corner, not bottom-left.
-                final android.graphics.Matrix renderMatrix = new android.graphics.Matrix();
-                renderMatrix.preTranslate(0.5f, 0.5f);
-                renderMatrix.preScale(1f, -1f);
-                renderMatrix.preTranslate(-0.5f, -0.5f);
-                mDrawer.drawTexture(mTexture, 800, 800, EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
-                mEGLBase.swapBuffers();
-            }
-            mWorkHandler.postDelayed(this, 100);
-        }
-    }
-
+  private class DrawOperation implements Runnable {
     @Override
-    protected void onResume() {
-        super.onResume();
-    }
+    public void run() {
+      if (mEGLBase != null) {
+        EGLUtil.uploadBitmapToTexture(mTexture, 800, 800);
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mWorkHandler.postAtFrontOfQueue(() -> {
-            mEGLBase.release();
-            mDrawer.release();
-        });
-        mWorkHandler.post(() -> {
-            Log.i(TAG, "quit opengl worker");
-            mWorkHandler.getLooper().quit();
-        });
+        // darw buffer starting at top-left corner, not bottom-left.
+        final android.graphics.Matrix renderMatrix = new android.graphics.Matrix();
+        renderMatrix.preTranslate(0.5f, 0.5f);
+        renderMatrix.preScale(1f, -1f);
+        renderMatrix.preTranslate(-0.5f, -0.5f);
+        mDrawer.drawTexture(mTexture, 800, 800, EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
+        mEGLBase.swapBuffers();
+      }
+      mWorkHandler.postDelayed(this, 100);
     }
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+  }
+
+  @Override
+  protected void onDestroy() {
+    super.onDestroy();
+    mWorkHandler.postAtFrontOfQueue(() -> {
+      mEGLBase.release();
+      mDrawer.release();
+    });
+    mWorkHandler.post(() -> {
+      Log.i(TAG, "quit opengl worker");
+      mWorkHandler.getLooper().quit();
+    });
+  }
 }
