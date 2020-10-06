@@ -1,7 +1,6 @@
 package com.srw.opengl_test.activity;
 
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
@@ -11,6 +10,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.example.util.BitmapOperations;
 import com.srw.opengl_test.EGLBase;
 import com.srw.opengl_test.EGLDrawer;
 import com.srw.opengl_test.EGLUtil;
@@ -75,7 +75,7 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
         String DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
         Date date = new Date(System.currentTimeMillis());
         SimpleDateFormat sf = new SimpleDateFormat(DATE_PATTERN);
-        Bitmap bitmap = EGLUtil.createBitmapWithString(800, 800, sf.format(date));
+        Bitmap bitmap = BitmapOperations.createBitmapWithString(800, 800, sf.format(date));
         EGLUtil.uploadBitmapToTexture(mTexture, bitmap);
 
         // darw buffer starting at top-left corner, not bottom-left.

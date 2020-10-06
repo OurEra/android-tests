@@ -1,5 +1,6 @@
 package com.example.tests;
 
+import android.Manifest;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.widget.Toast;
 import android.support.v7.app.AppCompatActivity;
 
 import com.example.lib.camera.VideoCaptureDeviceInfoAndroid;
+import com.example.util.PermissionChecker;
 
 public class MainActivity extends AppCompatActivity {
     @Override
@@ -39,7 +41,8 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isPermissionOK() {
         PermissionChecker permissionChecker = new PermissionChecker(this);
-        boolean isPermissionOK = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || permissionChecker.checkPermission();
+        boolean isPermissionOK = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || permissionChecker.checkPermission(
+                new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA});
         if (!isPermissionOK) {
             Toast.makeText(this, "Some permissions is not approved !!!", Toast.LENGTH_SHORT).show();
         }

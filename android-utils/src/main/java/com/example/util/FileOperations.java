@@ -1,9 +1,7 @@
-package com.srw.utils;
+package com.example.util;
 
 import android.graphics.Bitmap;
 import android.util.Log;
-
-import com.srw.opengl_test.EGLDrawer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -13,7 +11,7 @@ import java.io.IOException;
 
 public class FileOperations {
 
-    private static final String TAG = "GLTEST-" + FileOperations.class.getSimpleName();
+    private static final String TAG = "UTILS-" + FileOperations.class.getSimpleName();
 
     public static void saveBitmapToFile(Bitmap bitmap, String path) {
 

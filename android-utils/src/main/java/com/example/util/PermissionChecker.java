@@ -1,6 +1,5 @@
-package com.srw.utils;
+package com.example.util;
 
-import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -42,18 +41,16 @@ public class PermissionChecker {
     }
 
     @TargetApi(Build.VERSION_CODES.M)
-    public boolean checkPermission() {
+    public boolean checkPermission(String[] permissions) {
         boolean ret = true;
 
         List<String> permissionsNeeded = new ArrayList<String>();
         final List<String> permissionsList = new ArrayList<String>();
-        if (!addPermission(permissionsList, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            permissionsNeeded.add("Write external storage");
-
-        } if (!addPermission(permissionsList, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-            permissionsNeeded.add("read external storage");
+        for (String permission : permissions) {
+            if (!addPermission(permissionsList, permission)) {
+                permissionsNeeded.add(permission);
+            }
         }
-
         if (permissionsNeeded.size() > 0) {
             // Need Rationale
             String message = "You need to grant access to " + permissionsNeeded.get(0);
@@ -76,7 +73,6 @@ public class PermissionChecker {
             }
             ret = false;
         }
-
         return ret;
     }
 
