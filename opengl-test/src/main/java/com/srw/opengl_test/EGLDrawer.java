@@ -54,22 +54,22 @@ public class EGLDrawer {
   });
 
   public static String DEFAULT_VERTEX_SHADER =
-          "attribute vec4 in_pos;\n" +
-          "attribute vec4 in_tc;\n" +
-          "uniform mat4 tex_mat;\n" +
-          "varying vec2 out_tc;\n" +
-          "void main() {\n" +
-          "  gl_Position = in_pos;\n" +
-          "  out_tc = (tex_mat * in_tc).xy;\n" +
-          "}\n";
+    " attribute vec4 in_pos;\n" +
+    " attribute vec4 in_tc;\n" +
+    " uniform mat4 tex_mat;\n" +
+    " varying vec2 out_tc;\n" +
+    " void main() {\n" +
+    "  gl_Position = in_pos;\n" +
+    "  out_tc = (tex_mat * in_tc).xy;\n" +
+    " }\n";
 
   public static String DEFAULT_FRAGMENT_SHADER =
-          "precision mediump float;\n" +
-          "varying vec2 out_tc;\n" +
-          "uniform sampler2D tex;\n" +
-          "void main() {\n" +
-          "  gl_FragColor = texture2D(tex, out_tc);\n" +
-          "}\n";
+    " precision mediump float;\n" +
+    " varying vec2 out_tc;\n" +
+    " uniform sampler2D tex;\n" +
+    " void main() {\n" +
+    "  gl_FragColor = texture2D(tex, out_tc);\n" +
+    " }\n";
 
   private EGLShader mShader;
   // "in_pos"

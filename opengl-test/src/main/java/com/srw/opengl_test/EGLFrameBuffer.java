@@ -12,18 +12,26 @@ public class EGLFrameBuffer {
   private int mWidth;
   private int mHeight;
 
-  public EGLFrameBuffer(int width, int height) {
+  public EGLFrameBuffer() {
+  }
+
+  // reset GL_FRAMEBUFFER output size
+  public void setFrameBufferSize(int width, int height) {
 
     mWidth = width;
     mHeight = height;
 
-    final int[] framebuffer = new int[1];
-    GLES20.glGenFramebuffers(1, framebuffer, 0);
-    mFrameBuffer = framebuffer[0];
-    Log.i(TAG, "framebuffer " + mFrameBuffer);
+    if (mFrameBuffer == 0) {
+      final int[] framebuffer = new int[1];
+      GLES20.glGenFramebuffers(1, framebuffer, 0);
+      mFrameBuffer = framebuffer[0];
+      Log.i(TAG, "framebuffer " + mFrameBuffer);
+    }
 
-    mTexture = EGLUtil.generateTexture();
-    Log.i(TAG, "texture " + mTexture);
+    if (mTexture == 0) {
+      mTexture = EGLUtil.generateTexture();
+      Log.i(TAG, "texture " + mTexture);
+    }
 
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexture);

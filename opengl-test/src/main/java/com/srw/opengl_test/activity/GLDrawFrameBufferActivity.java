@@ -50,7 +50,8 @@ public class GLDrawFrameBufferActivity extends AppCompatActivity {
             mEGLBase.createEGLSurface(holder.getSurface());
             mEGLBase.makeCurrent();
 
-            mFrameBuffer = new EGLFrameBuffer(1200, 800);
+            mFrameBuffer = new EGLFrameBuffer();
+            mFrameBuffer.setFrameBufferSize(1200, 800);
             mTexture = EGLUtil.generateTexture();
             Log.i(TAG, "handle " + mTexture);
         });
