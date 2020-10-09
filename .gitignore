@@ -9,3 +9,9 @@ app/src/main/obj/
 .externalNativeBuild
 .cxx
 *.o
+.classpath
+.project
+.settings/
+
+cscope.*
+tags

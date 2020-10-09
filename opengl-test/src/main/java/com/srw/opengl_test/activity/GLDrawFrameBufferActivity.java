@@ -2,6 +2,7 @@ package com.srw.opengl_test.activity;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
@@ -10,8 +11,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.ImageView;
 
+import com.example.util.BitmapOperations;
+import com.example.util.FileOperations;
 import com.srw.opengl_test.EGLBase;
 import com.srw.opengl_test.EGLDrawer;
 import com.srw.opengl_test.EGLFrameBuffer;
@@ -94,14 +96,21 @@ public class GLDrawFrameBufferActivity extends AppCompatActivity {
       EGLUtil.checkGlError("readPixel");
 
       GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+
+      // draw FBO output to surfaceview
+      final android.graphics.Matrix surfaceMatrix = new android.graphics.Matrix();
+      surfaceMatrix.preTranslate(0.5f, 0.5f);
+      surfaceMatrix.preScale(1f, -1f);
+      surfaceMatrix.preTranslate(-0.5f, -0.5f);
+      mDrawer.drawTexture(mFrameBuffer.getTexture(), 1200, 800, EGLUtil.convertMatrixFromAndroidGraphicsMatrix(surfaceMatrix));
+      mEGLBase.swapBuffers();
       runOnUiThread(() -> {
         final Bitmap output = Bitmap.createBitmap(mFrameBuffer.getWidth(), mFrameBuffer.getHeight(), Bitmap.Config.ARGB_8888);
         output.copyPixelsFromBuffer(rgbaData);
-        ((ImageView)findViewById(R.id.framebuffer_iv)).setImageBitmap(output);
+        FileOperations.saveBitmapToFile(output, "/sdcard/fb_rgba.png");
       });
     }
   }
-
 
   @Override
   protected void onDestroy() {
