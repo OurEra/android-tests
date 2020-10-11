@@ -3,6 +3,7 @@ package com.srw.opengl_test.activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
@@ -87,7 +88,9 @@ public class GLDrawFrameBufferActivity extends AppCompatActivity {
       renderMatrix.preTranslate(0.5f, 0.5f);
       renderMatrix.preScale(1f, 1f);
       renderMatrix.preTranslate(-0.5f, -0.5f);
-      mDrawer.drawTexture(mTexture, 1200, 800, EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
+      mDrawer.drawTexture(mTexture, 1200, 800,
+              EGLUtil.convertMatrixFromAndroidGraphicsMatrix(new Matrix()),
+              EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
 
       // readout what gl draw
       final ByteBuffer rgbaData = ByteBuffer.allocateDirect(mFrameBuffer.getWidth() * mFrameBuffer.getHeight() * 4);
@@ -102,7 +105,9 @@ public class GLDrawFrameBufferActivity extends AppCompatActivity {
       surfaceMatrix.preTranslate(0.5f, 0.5f);
       surfaceMatrix.preScale(1f, -1f);
       surfaceMatrix.preTranslate(-0.5f, -0.5f);
-      mDrawer.drawTexture(mFrameBuffer.getTexture(), 1200, 800, EGLUtil.convertMatrixFromAndroidGraphicsMatrix(surfaceMatrix));
+      mDrawer.drawTexture(mFrameBuffer.getTexture(), 1200, 800,
+              EGLUtil.convertMatrixFromAndroidGraphicsMatrix(new Matrix()),
+              EGLUtil.convertMatrixFromAndroidGraphicsMatrix(surfaceMatrix));
       mEGLBase.swapBuffers();
       runOnUiThread(() -> {
         final Bitmap output = Bitmap.createBitmap(mFrameBuffer.getWidth(), mFrameBuffer.getHeight(), Bitmap.Config.ARGB_8888);

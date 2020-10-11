@@ -1,6 +1,7 @@
 package com.srw.opengl_test;
 
 import android.annotation.TargetApi;
+import android.graphics.Matrix;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
@@ -88,7 +89,9 @@ public class HardwareEncoder {
       mDrawer = new EGLDrawer();
     }
     final android.graphics.Matrix renderMatrix = new android.graphics.Matrix();
-    mDrawer.drawTexture(texture, mWidth, mHeight, EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
+    mDrawer.drawTexture(texture, mWidth, mHeight,
+            EGLUtil.convertMatrixFromAndroidGraphicsMatrix(new Matrix()),
+            EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
     mEglBase.swapBuffers();
   }
 

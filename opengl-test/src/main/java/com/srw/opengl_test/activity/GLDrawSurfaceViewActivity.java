@@ -1,6 +1,7 @@
 package com.srw.opengl_test.activity;
 
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
@@ -83,7 +84,13 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
         renderMatrix.preTranslate(0.5f, 0.5f);
         renderMatrix.preScale(1f, -1f);
         renderMatrix.preTranslate(-0.5f, -0.5f);
-        mDrawer.drawTexture(mTexture, 800, 800, EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
+
+        final android.graphics.Matrix mvpMatrix = new android.graphics.Matrix();
+        mvpMatrix.preScale(0.5f, 0.5f);
+        mvpMatrix.preTranslate(1f, 1f);
+        mDrawer.drawTexture(mTexture, 800, 800,
+                EGLUtil.convertMatrixFromAndroidGraphicsMatrix(mvpMatrix),
+                EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
         mEGLBase.swapBuffers();
       }
       mWorkHandler.postDelayed(this, 100);

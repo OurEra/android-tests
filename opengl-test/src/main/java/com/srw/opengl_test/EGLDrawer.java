@@ -56,10 +56,11 @@ public class EGLDrawer {
   public static String DEFAULT_VERTEX_SHADER =
     " attribute vec4 in_pos;\n" +
     " attribute vec4 in_tc;\n" +
+    " uniform mat4 mvp_mat;\n" +
     " uniform mat4 tex_mat;\n" +
     " varying vec2 out_tc;\n" +
     " void main() {\n" +
-    "  gl_Position = in_pos;\n" +
+    "  gl_Position = mvp_mat * in_pos;\n" +
     "  out_tc = (tex_mat * in_tc).xy;\n" +
     " }\n";
 
@@ -78,9 +79,11 @@ public class EGLDrawer {
   private int inTcAttrLocation;
   // "tex_mat"
   private int texMatUniformLocation;
+  // "mvp_mat"
+  private int mvpMatUniformLocation;
 
-  public void drawTexture(int texture, int viewWidth, int viewHeight, float[] texMatrix) {
-    prepareShader(texMatrix);
+  public void drawTexture(int texture, int viewWidth, int viewHeight,  float[] mvpMatrix, float[] texMatrix) {
+    prepareShader(mvpMatrix, texMatrix);
 
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture);
@@ -92,7 +95,7 @@ public class EGLDrawer {
     GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
   }
 
-  private void prepareShader(float[] texMatrix) {
+  private void prepareShader(float[] mvpMatrix, float[] texMatrix) {
     if (mShader == null) {
       mShader = new EGLShader(DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER);
       mShader.useProgram();
@@ -101,6 +104,7 @@ public class EGLDrawer {
       inPosAttrLocation = mShader.getAttributeLocation("in_pos");
       inTcAttrLocation = mShader.getAttributeLocation("in_tc");
       texMatUniformLocation = mShader.getUniformLocation("tex_mat");
+      mvpMatUniformLocation = mShader.getUniformLocation("mvp_mat");
       GLES20.glUniform1i(mShader.getUniformLocation("tex"), 0); // TEXTURE0
       Log.i(TAG, "in_pos " + inPosAttrLocation + " in_tc " + inTcAttrLocation + " tex_mat " + texMatUniformLocation);
     }
@@ -118,6 +122,7 @@ public class EGLDrawer {
 
     // upload uniform matrix
     GLES20.glUniformMatrix4fv(texMatUniformLocation, 1, false, texMatrix, 0);
+    GLES20.glUniformMatrix4fv(mvpMatUniformLocation, 1, false, mvpMatrix, 0);
   }
 
   public void release() {
