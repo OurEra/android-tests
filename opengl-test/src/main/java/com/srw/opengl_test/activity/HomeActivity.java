@@ -2,6 +2,7 @@ package com.srw.opengl_test.activity;
 
 import android.Manifest;
 import android.content.Intent;
+import android.graphics.Matrix;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;

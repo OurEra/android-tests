@@ -29,6 +29,9 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
   private EGLBase mEGLBase;
   private int mTexture;
 
+  private int mViewWidth;
+  private int mViewHeight;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -56,7 +59,8 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
 
       @Override
       public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
+        mViewWidth = width;
+        mViewHeight = height;
       }
 
       @Override
@@ -87,8 +91,8 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
 
         final android.graphics.Matrix mvpMatrix = new android.graphics.Matrix();
         mvpMatrix.preScale(0.5f, 0.5f);
-        mvpMatrix.preTranslate(1f, 1f);
-        mDrawer.drawTexture(mTexture, 800, 800,
+        mvpMatrix.preTranslate(-0.5f * 2, -0.5f * 2);
+        mDrawer.drawTexture(mTexture, mViewWidth, mViewHeight,
                 EGLUtil.convertMatrixFromAndroidGraphicsMatrix(mvpMatrix),
                 EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
         mEGLBase.swapBuffers();
