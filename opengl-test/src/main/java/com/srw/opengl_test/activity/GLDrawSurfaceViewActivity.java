@@ -73,6 +73,10 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
   }
 
   private class DrawOperation implements Runnable {
+    float xTranslate = 0.0f;
+    float yTranslate = 0.0f;
+    float translateStep = 0.02f;
+
     @Override
     public void run() {
       if (mEGLBase != null) {
@@ -90,14 +94,24 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
         renderMatrix.preTranslate(-0.5f, -0.5f);
 
         final android.graphics.Matrix mvpMatrix = new android.graphics.Matrix();
+        xTranslate += translateStep;
+        yTranslate += translateStep;
+        if (xTranslate >= 0.5f || yTranslate >= 0.5f) {
+          translateStep = -0.01f;
+        } else if (xTranslate <= -0.5f || yTranslate <= -0.5f) {
+          translateStep = 0.01f;
+        }
+        mvpMatrix.preTranslate(xTranslate, yTranslate);
         mvpMatrix.preScale(0.5f, 0.5f);
-        mvpMatrix.preTranslate(-0.5f * 2, -0.5f * 2);
+
+        GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         mDrawer.drawTexture(mTexture, mViewWidth, mViewHeight,
                 EGLUtil.convertMatrixFromAndroidGraphicsMatrix(mvpMatrix),
                 EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
         mEGLBase.swapBuffers();
       }
-      mWorkHandler.postDelayed(this, 100);
+      mWorkHandler.postDelayed(this, 200);
     }
   }
 
