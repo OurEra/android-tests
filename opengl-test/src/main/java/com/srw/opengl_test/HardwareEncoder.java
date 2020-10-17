@@ -62,25 +62,31 @@ public class HardwareEncoder {
       Log.e(TAG, "err: " + e.getMessage());
     }
 
-    MediaFormat format = MediaFormat.createVideoFormat(AVC_MIME, mWidth, mHeight);
-    format.setInteger(MediaFormat.KEY_BIT_RATE, mBitrate);
-    format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, mKeyIntervalBySec);
-    format.setInteger(MediaFormat.KEY_FRAME_RATE, mFrameRate);
-    format.setInteger(MediaFormat.KEY_COLOR_FORMAT, selectColorFormat(getTextureColorFormats(), codecInfo.getCapabilitiesForType(AVC_MIME)));
+    try {
+      MediaFormat format = MediaFormat.createVideoFormat(AVC_MIME, mWidth, mHeight);
+      format.setInteger(MediaFormat.KEY_BIT_RATE, mBitrate);
+      format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, mKeyIntervalBySec);
+      format.setInteger(MediaFormat.KEY_FRAME_RATE, mFrameRate);
+      format.setInteger(MediaFormat.KEY_COLOR_FORMAT, selectColorFormat(getTextureColorFormats(), codecInfo.getCapabilitiesForType(AVC_MIME)));
 
-    mCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-    mCodec.start();
+      mCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 
-    mCodecSurface = mCodec.createInputSurface();
-    mEglBase = new EGLBase(EGLBase.CONFIG_RECORDABLE);
-    mEglBase.createEGLSurface(mCodecSurface);
-    mEglBase.makeCurrent();
-    mCodecRunning = true;
-    Log.i(TAG, "init encode done");
+      mCodecSurface = mCodec.createInputSurface();
+      mEglBase = new EGLBase(EGLBase.CONFIG_RECORDABLE);
+      mEglBase.createEGLSurface(mCodecSurface);
+      mEglBase.makeCurrent();
 
-    // start callback thread
-    mCallbackThread = new CallbackThread();
-    mCallbackThread.start();
+      mCodec.start();
+      mCodecRunning = true;
+      Log.i(TAG, "init encode done");
+
+      // start callback thread
+      mCallbackThread = new CallbackThread();
+      mCallbackThread.start();
+    } catch (IllegalStateException e) {
+       Log.e(TAG, "e " + e.toString());
+       release();
+    }
   }
 
   public void encodeTexture(int texture) {
@@ -97,12 +103,20 @@ public class HardwareEncoder {
 
   public void release() {
     mEncodeContextChecker.checkIsOnValidThread();
-    mCodecRunning = false;
-    ThreadUtil.joinThreadUninterrupt(mCallbackThread, 5000);
+    if (mCallbackThread != null) {
+      mCodecRunning = false;
+      ThreadUtil.joinThreadUninterrupt(mCallbackThread, 5000);
+    }
 
-    mCodecSurface.release();
-    mDrawer.release();
-    mEglBase.release();
+    if (mCodecSurface != null) {
+      mCodecSurface.release();
+    }
+    if (mDrawer != null) {
+      mDrawer.release();
+    }
+    if (mEglBase != null) {
+      mEglBase.release();
+    }
   }
 
   private MediaCodecInfo findH264HardwareEncoder() {
@@ -130,6 +144,7 @@ public class HardwareEncoder {
     for (int support : supports) {
       for (int cap : caps.colorFormats) {
         if (support == cap) {
+          Log.i(TAG, "color " + cap);
           return cap;
         }
       }
@@ -158,7 +173,7 @@ public class HardwareEncoder {
       while (mCodecRunning) {
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
         int index = mCodec.dequeueOutputBuffer(info, 100 * 1000);
-        if (index > 0) {
+        if (index < 0) {
           continue;
         }
 

@@ -19,6 +19,7 @@ import com.srw.opengl_test.EGLBase;
 import com.srw.opengl_test.EGLDrawer;
 import com.srw.opengl_test.EGLFrameBuffer;
 import com.srw.opengl_test.EGLUtil;
+import com.srw.opengl_test.HardwareEncoder;
 import com.srw.opengl_test.R;
 
 import java.nio.ByteBuffer;
@@ -27,17 +28,37 @@ public class GLDrawFrameBufferActivity extends AppCompatActivity {
 
   private static final String TAG = "GLTEST-" + GLDrawFrameBufferActivity.class.getSimpleName();
 
+  private int mWidth = 1200;
+  private int mHeight = 800;
+
   private Handler mWorkHandler;
   private EGLDrawer mDrawer;
   private EGLBase mEGLBase;
   private EGLFrameBuffer mFrameBuffer;
   private int mTexture;
 
+  private HardwareEncoder mEncoder = new HardwareEncoder();
+  private Handler mEncoderHandler;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.draw_framebuffer);
 
+    // create encode handler
+    HandlerThread encodeThread = new HandlerThread("hardware encoder");
+    encodeThread.start();
+    mEncoderHandler = new Handler(encodeThread.getLooper());
+    mEncoderHandler.post(() -> {
+      mEncoder.initEncode(mWidth, mHeight, 2000, 25, 3, new HardwareEncoder.EncodeCallback() {
+        @Override
+        public void onEncodedImage(boolean isKey, ByteBuffer buffer) {
+          Log.i(TAG, "encode key " + isKey + " buffer " + buffer.limit());
+        }
+      });
+    });
+
+    // create opengl handler
     HandlerThread openglWorkThread = new HandlerThread("opengl worker");
     openglWorkThread.start();
     mWorkHandler = new Handler(openglWorkThread.getLooper());
@@ -54,7 +75,7 @@ public class GLDrawFrameBufferActivity extends AppCompatActivity {
             mEGLBase.makeCurrent();
 
             mFrameBuffer = new EGLFrameBuffer();
-            mFrameBuffer.setFrameBufferSize(1200, 800);
+            mFrameBuffer.setFrameBufferSize(mWidth, mHeight);
             mTexture = EGLUtil.generateTexture();
             Log.i(TAG, "handle " + mTexture);
         });
@@ -74,6 +95,7 @@ public class GLDrawFrameBufferActivity extends AppCompatActivity {
     mWorkHandler.postDelayed(new DrawOperation(), 1000);
   }
 
+  private boolean saveFBO = false;
   private class DrawOperation implements Runnable {
     @Override
     public void run() {
@@ -88,7 +110,7 @@ public class GLDrawFrameBufferActivity extends AppCompatActivity {
       renderMatrix.preTranslate(0.5f, 0.5f);
       renderMatrix.preScale(1f, 1f);
       renderMatrix.preTranslate(-0.5f, -0.5f);
-      mDrawer.drawTexture(mTexture, 1200, 800,
+      mDrawer.drawTexture(mTexture, mWidth, mHeight,
               EGLUtil.convertMatrixFromAndroidGraphicsMatrix(new Matrix()),
               EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
 
@@ -105,15 +127,18 @@ public class GLDrawFrameBufferActivity extends AppCompatActivity {
       surfaceMatrix.preTranslate(0.5f, 0.5f);
       surfaceMatrix.preScale(1f, -1f);
       surfaceMatrix.preTranslate(-0.5f, -0.5f);
-      mDrawer.drawTexture(mFrameBuffer.getTexture(), 1200, 800,
+      mDrawer.drawTexture(mFrameBuffer.getTexture(), mWidth, mHeight,
               EGLUtil.convertMatrixFromAndroidGraphicsMatrix(new Matrix()),
               EGLUtil.convertMatrixFromAndroidGraphicsMatrix(surfaceMatrix));
       mEGLBase.swapBuffers();
-      runOnUiThread(() -> {
-        final Bitmap output = Bitmap.createBitmap(mFrameBuffer.getWidth(), mFrameBuffer.getHeight(), Bitmap.Config.ARGB_8888);
-        output.copyPixelsFromBuffer(rgbaData);
-        FileOperations.saveBitmapToFile(output, "/sdcard/fb_rgba.png");
-      });
+      if (saveFBO) {
+        runOnUiThread(() -> {
+          final Bitmap output = Bitmap.createBitmap(mFrameBuffer.getWidth(), mFrameBuffer.getHeight(), Bitmap.Config.ARGB_8888);
+          output.copyPixelsFromBuffer(rgbaData);
+          FileOperations.saveBitmapToFile(output, "/sdcard/fb_rgba.png");
+        });
+      }
+      mWorkHandler.postDelayed(this, 200);
     }
   }
 
