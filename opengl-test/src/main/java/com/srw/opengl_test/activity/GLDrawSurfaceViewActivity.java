@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Choreographer;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -20,7 +21,7 @@ import com.srw.opengl_test.R;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class GLDrawSurfaceViewActivity extends AppCompatActivity {
+public class GLDrawSurfaceViewActivity extends AppCompatActivity implements Choreographer.FrameCallback {
 
   private static final String TAG = "GLTEST-" + GLDrawSurfaceViewActivity.class.getSimpleName();
 
@@ -31,6 +32,8 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
 
   private int mViewWidth;
   private int mViewHeight;
+
+  private DrawOperation mDrawOperations;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +57,7 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
 
             mTexture = EGLUtil.generateTexture();
             Log.i(TAG, "handle " + mTexture);
+            Choreographer.getInstance().postFrameCallback(GLDrawSurfaceViewActivity.this);
         });
       }
 
@@ -65,17 +69,24 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
 
       @Override
       public void surfaceDestroyed(SurfaceHolder holder) {
-
+        Choreographer.getInstance().removeFrameCallback(GLDrawSurfaceViewActivity.this);
       }
     });
 
-    mWorkHandler.postDelayed(new DrawOperation(), 1000);
+  }
+
+  @Override
+  public void doFrame(long frameTimeNanos) {
+    if (mDrawOperations == null) {
+      mDrawOperations = new DrawOperation();
+    }
+    mWorkHandler.post(mDrawOperations);
   }
 
   private class DrawOperation implements Runnable {
     float xTranslate = 0.0f;
     float yTranslate = 0.0f;
-    float translateStep = 0.02f;
+    float translateStep = 0.004f;
 
     @Override
     public void run() {
@@ -97,9 +108,9 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
         xTranslate += translateStep;
         yTranslate += translateStep;
         if (xTranslate >= 0.5f || yTranslate >= 0.5f) {
-          translateStep = -0.01f;
+          translateStep = -translateStep;
         } else if (xTranslate <= -0.5f || yTranslate <= -0.5f) {
-          translateStep = 0.01f;
+          translateStep = -translateStep;
         }
         mvpMatrix.preTranslate(xTranslate, yTranslate);
         mvpMatrix.preScale(0.5f, 0.5f);
@@ -111,7 +122,7 @@ public class GLDrawSurfaceViewActivity extends AppCompatActivity {
                 EGLUtil.convertMatrixFromAndroidGraphicsMatrix(renderMatrix));
         mEGLBase.swapBuffers();
       }
-      mWorkHandler.postDelayed(this, 200);
+      Choreographer.getInstance().postFrameCallback(GLDrawSurfaceViewActivity.this);
     }
   }
 
