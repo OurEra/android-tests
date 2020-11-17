@@ -1,0 +1,3 @@
+[submodule "vendor/soundtouch"]
+	path = vendor/soundtouch
+	url = https://gitlab.com/soundtouch/soundtouch.git
