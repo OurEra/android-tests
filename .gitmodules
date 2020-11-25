@@ -1,3 +1,16 @@
 [submodule "vendor/soundtouch"]
 	path = vendor/soundtouch
 	url = https://gitlab.com/soundtouch/soundtouch.git
+    ignore = dirty
+[submodule "vendor/x264"]
+	path = vendor/x264
+	url = https://code.videolan.org/videolan/x264.git
+    ignore = dirty
+[submodule "vendor/openh264"]
+	path = vendor/openh264
+	url = https://github.com/cisco/openh264
+    ignore = dirty
+[submodule "vendor/FFmpeg"]
+	path = vendor/FFmpeg
+	url = git@github.com:FFmpeg/FFmpeg.git
+    ignore = dirty
