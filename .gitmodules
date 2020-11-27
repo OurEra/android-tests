@@ -10,7 +10,3 @@
 	path = vendor/openh264
 	url = https://github.com/cisco/openh264
     ignore = dirty
-[submodule "vendor/FFmpeg"]
-	path = vendor/FFmpeg
-	url = git@github.com:FFmpeg/FFmpeg.git
-    ignore = dirty
