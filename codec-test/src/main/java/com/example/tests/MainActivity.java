@@ -24,7 +24,8 @@ public class MainActivity extends AppCompatActivity {
         ((Button)findViewById(R.id.btn_start)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, CodecTestActivity.class));
+                //startActivity(new Intent(MainActivity.this, CodecTestActivity.class));
+                startActivity(new Intent(MainActivity.this, BasicDecoderActivity.class));
             }
         });
     }
