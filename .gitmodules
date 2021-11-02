@@ -13,3 +13,9 @@
 [submodule "vendor/FFmpeg"]
 	path = vendor/FFmpeg
 	url = https://github.com/FFmpeg/FFmpeg.git
+[submodule "vendor/openssl"]
+	path = vendor/openssl
+	url = https://github.com/openssl/openssl.git
+[submodule "vendor/libwebsockets"]
+	path = vendor/libwebsockets
+	url = git@github.com:warmcat/libwebsockets
